@@ -154,7 +154,7 @@ def user_page_admin():
 		return redirect(url_for("login"))
 	if is_admin():
 		get_user_information()
-		return render_template("admin.html")
+		return render_template("admin.html", users=get_user_information())
 	return redirect(url_for("home"))
 
 @app.route("/create_user", methods=["POST", "GET"])
@@ -180,8 +180,9 @@ def create_user():
 
 # @app.route("/get_user_info_admin")
 def get_user_information():
-	urs = g.db.execute("select username, admin from User").fetchall()
-	print(urs)
+	urs = [dict(username=row[0], admin=row[1]) for row in g.db.execute("select username, admin from User").fetchall()]
+	# beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
+	return urs
 
 @app.route("/add_score", methods=["POST", "GET"])
 def add_score():

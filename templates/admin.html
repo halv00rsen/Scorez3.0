@@ -24,24 +24,50 @@
 			</tr>
 		</table>
 
+		<h3>Brukere</h3>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Brukernavn</th>
+					<th>Administrator</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody id="user-body">
+				{% for user in users %}
+					<tr>
+						<td>{{ user.username }}</td>
+						<td>{{ user.admin }}</td>
+						<td>
+							<button class="btn btn-danger btn-xs del-btn">Slett</button>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+
+		</table>
+
 {% endblock %}
 
 {% block scripts %}
 	<script type="text/javascript">
 
 		$("#create_user").click(function(){
+			var data = {
+				username: $("#username").val(),
+				password: $("#password").val(),
+				admin: $("#admin").is(":checked")
+			}
 			$.ajax({
 				type: "POST",
 				contentType: 'application/json;charset=UTF-8',
 				url: "{{ url_for('create_user') }}",
-				data: JSON.stringify({
-					username: $("#username").val(),
-					password: $("#password").val(),
-					admin: $("#admin").is(":checked")
-				}),
+				data: JSON.stringify(data),
 				success: function(result) {
-					if (result === "true")
+					if (result === "true"){
 						show_message("Brukeren " + $("#username").val() + " ble laget.");
+						$("#user-body").append("<tr><td>" + data.username + "</td><td>" + data.admin + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>");
+					}
 					else
 						show_message("Brukeren " + $("#username").val() + " ble ikke laget.");
 					$("#username").val("");
