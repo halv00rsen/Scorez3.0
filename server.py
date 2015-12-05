@@ -161,15 +161,20 @@ def create_user():
 	if not is_logged_in():
 		return redirect(url_for("login"))
 	if is_admin() and request.method == "POST":
-		username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
+		js = request.get_json()
+		username, password, admin = js["username"], js["password"], js["admin"]
+		# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
 		error = None
 		if not len(g.db.execute("select 1 username from User where username = ?", [username]).fetchall()):
 			g.db.execute("insert into User values (?,?,?)", [username, hash_password(password), admin])
 			g.db.commit()
-			error = "Brukeren {} ble laget".format(username)
+			# error = "Brukeren {} ble laget".format(username)
+			error = "true"
 		else:
-			error = "Brukernavnet {} finnes allerede.".format(username)
-		return render_template("admin.html", error=error)
+			# error = "Brukernavnet {} finnes allerede.".format(username)
+			error = "false"
+		return error
+		# return render_template("admin.html", error=error)
 	return redirect(url_for("home"))
 
 @app.route("/add_score", methods=["POST", "GET"])

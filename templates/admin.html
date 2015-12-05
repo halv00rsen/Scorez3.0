@@ -3,23 +3,48 @@
 {% block header %}Ny bruker{% endblock %}
 {% block body %}
 
-	{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
-	<form action="{{ url_for('create_user') }}" method="POST">
 		<table class="table">
 			<tr>
 				<td>Username:</td>
-				<td><input type="text" name="username"></td>
+				<td><input type="text" name="username" id="username"></td>
 			</tr>
 			<tr>
 				<td>Password:</td>
-				<td><input type="password" name="password"></td>
+				<td><input type="password" name="password" id="password"></td>
 			</tr>
 			<tr>
 				<td>Admin:</td>
-				<td><input type="checkbox" name="admin"></td>
+				<td><input type="checkbox" name="admin" id="admin"></td>
 			</tr>
 		</table>
-		<input type="submit" value="Lag bruker">
-	</form>
+		<button id="create_user">Lag bruker</button>
 
+{% endblock %}
+
+{% block scripts %}
+	<script type="text/javascript">
+
+		$("#create_user").click(function(){
+			$.ajax({
+				type: "POST",
+				contentType: 'application/json;charset=UTF-8',
+				url: "{{ url_for('create_user') }}",
+				data: JSON.stringify({
+					username: $("#username").val(),
+					password: $("#password").val(),
+					admin: $("#admin").is(":checked")
+				}),
+				success: function(result) {
+					if (result === "true")
+						show_message("Brukeren " + $("#username").val() + " ble laget.");
+					else
+						show_message("Brukeren " + $("#username").val() + " ble ikke laget.");
+					$("#username").val("");
+					$("#password").val("");
+					$("#admin").prop('checked', false);
+				}
+			});
+		});
+
+	</script>
 {% endblock %}
