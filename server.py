@@ -73,7 +73,9 @@ def delete_beer(beer_name, beer_type):
 	if is_admin():
 		g.db.execute("delete from Beer where name = ? and type = ?", [beer_name, beer_type])
 		g.db.commit()
-	return redirect(url_for("home"))
+		return "true"
+	return "false"
+	# return redirect(url_for("home"))
 
 
 @app.route("/logout")
@@ -151,6 +153,7 @@ def user_page_admin():
 	if not is_logged_in():
 		return redirect(url_for("login"))
 	if is_admin():
+		get_user_information()
 		return render_template("admin.html")
 	return redirect(url_for("home"))
 
@@ -159,16 +162,26 @@ def create_user():
 	if not is_logged_in():
 		return redirect(url_for("login"))
 	if is_admin() and request.method == "POST":
-		username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
+		js = request.get_json()
+		username, password, admin = js["username"], js["password"], js["admin"]
+		# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
 		error = None
 		if not len(g.db.execute("select 1 username from User where username = ?", [username]).fetchall()):
 			g.db.execute("insert into User values (?,?,?)", [username, hash_password(password), admin])
 			g.db.commit()
-			error = "Brukeren {} ble laget".format(username)
+			# error = "Brukeren {} ble laget".format(username)
+			error = "true"
 		else:
-			error = "Brukernavnet {} finnes allerede.".format(username)
-		return render_template("admin.html", error=error)
+			# error = "Brukernavnet {} finnes allerede.".format(username)
+			error = "false"
+		return error
+		# return render_template("admin.html", error=error)
 	return redirect(url_for("home"))
+
+# @app.route("/get_user_info_admin")
+def get_user_information():
+	urs = g.db.execute("select username, admin from User").fetchall()
+	print(urs)
 
 @app.route("/add_score", methods=["POST", "GET"])
 def add_score():
