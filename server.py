@@ -153,6 +153,7 @@ def user_page_admin():
 	if not is_logged_in():
 		return redirect(url_for("login"))
 	if is_admin():
+		get_user_information()
 		return render_template("admin.html")
 	return redirect(url_for("home"))
 
@@ -176,6 +177,11 @@ def create_user():
 		return error
 		# return render_template("admin.html", error=error)
 	return redirect(url_for("home"))
+
+# @app.route("/get_user_info_admin")
+def get_user_information():
+	urs = g.db.execute("select username, admin from User").fetchall()
+	print(urs)
 
 @app.route("/add_score", methods=["POST", "GET"])
 def add_score():
