@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block header %}Bytt passord{% endblock %}
+
+{% block body %}
+
+	
+	<table class="table">
+		<tr>
+			<td>Gjeldende passord:</td>
+			<td><input type="password" id="old_password"></td>
+		</tr>
+		<tr>
+			<td>Nytt passord:</td>
+			<td><input type="password" id="new_password"></td>
+		</tr>
+		<tr>
+			<td>Gjenta passord:</td>
+			<td><input type="password" id="re_new_password"></td>
+		</tr>
+		<tr>
+			<!-- <td><p id="message" hidden></p></td> -->
+			<td></td>
+			<td><button id="save_button">Lagre</button></td>
+		</tr>
+	</table>
+	
+{% endblock %}
+
+{% block scripts %}
+
+	<script type="text/javascript">
+		var reset_fields = function() {
+			$("#old_password").val("");
+			$("#new_password").val("");
+			$("#re_new_password").val("");
+		}
+
+		$("#save_button").click(function() {
+			var oldPass = $("#old_password").val()
+			var newPass = $("#new_password").val()
+			var reNewPass = $("#re_new_password").val()
+			if (newPass !== reNewPass){
+				show_message("Passordene matcher ikke.");
+				return null;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('change_password') }}",
+				data: JSON.stringify({
+					"old_password": oldPass,
+					"new_password": newPass
+				}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result == "true")
+						show_message("Passordet ble endret.");
+					else
+						show_message("Passordet ble ikke endret.");
+					reset_fields();
+				}
+			});
+		});
+
+	</script>
+
+{% endblock %}

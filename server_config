@@ -1,0 +1,3 @@
+DATABASE = "database.db"
+DEBUG = True
+SECRET_KEY = "emqHJD4P&YJdC-#yHL.3dX9JxLJ6K(1WRH18x72uji,^w8.301!$+;07Tb0V<7%"

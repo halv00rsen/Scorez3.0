@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block header %}Øl{% endblock %}
+
+{% block body %}
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Poeng</th>
+				<th>Navn</th>
+				<th>Type</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for beer in beers %}
+			<tr>
+				<td>0.0</td>
+				<td>{{ beer.name }}</td>
+				<td>{{ beer.type }}</td>
+				<td>
+					<ul class="list-inline">
+						<li>
+							<form action="{{ url_for('show_beer_page', beer_name=beer.name, beer_type=beer.type) }}" method="GET">
+								<input class="btn btn-info btn-xs" type="submit" value="Vis">
+							</form>
+						</li>
+						{% if session.admin %}
+						<li>
+							<button class="btn btn-danger btn-xs del-btn" value="{{ url_for('delete_beer', beer_name=beer.name, beer_type=beer.type) }}">Slett</button>
+							<!-- <form action="{{ url_for('delete_beer', beer_name=beer.name, beer_type=beer.type) }}" method="POST">
+								<input class="btn btn-danger btn-xs del-btn" type="submit" value="Slett">
+							</form> -->
+						</li>
+						{% endif %}
+						<li>
+							<button class="btn btn-success btn-xs point-btn">Legg til poeng</button>
+						</li>
+					</ul>
+				</td>
+			</tr>
+			{% endfor %}
+			<ul id="points-field" class="list-inline" style="margin-top:10px;" hidden>
+				<li><input id="points" type="number" style="max-width: 60px;"></li>
+				<li><button class="btn btn-default btn-xs">Legg til</button></li>
+			</ul>
+			<ul id="del-field" class="list-inline" style="margin-top:10px;" hidden>
+				<li>Er du sikker?</li>
+				<li><button id="confirm-del" class="btn btn-danger btn-xs">Slett</button></li>
+				<li><button id="cancel-del" class="btn btn-info btn-xs">Avbryt</button></li>
+			</ul>
+		</tbody>
+	</table>
+{% endblock %}
+
+{% block scripts %}
+	<script type="text/javascript">
+
+		var beers = [];
+
+		var is_active_button = null;
+		var delete_url = null;
+
+		var add_point_field = function(field) {
+			if ($("#del-field").is(":visible")){
+				$("#del-field").hide();
+				delete_url = null;
+			}
+			field.append($("#points-field"));
+			$("#points").val("");
+			$("#points-field").fadeIn(1000, null);
+		}
+
+		$("#cancel-del").click(function() {
+			$("#del-field").hide();
+			delete_url = null;
+		});
+
+		$("#confirm-del").click(function() {
+			if (delete_url){
+				$.ajax({
+					type: "POST",
+					url: delete_url
+				});
+			}
+		});
+
+		$(".del-btn").click(function() {
+			if (is_active_button){
+				is_active_button.removeClass("active");
+				$("#points-field").hide();
+				is_active_button = null;
+			}
+			$(this).parent().parent().parent().append($("#del-field"));
+			delete_url = $(this).val();
+			$("#del-field").show();
+		});
+
+		$(".point-btn").click(function() {
+			if (!$(this).hasClass("active")){
+				if (is_active_button)
+					is_active_button.removeClass("active");
+				is_active_button = $(this);
+				is_active_button.addClass("active");
+				add_point_field(is_active_button.parent().parent().parent());
+			}else {
+				is_active_button.removeClass("active")
+				is_active_button = null;
+				$("#points-field").fadeOut(500, null);
+			}
+		});
+
+	</script>
+{% endblock %}

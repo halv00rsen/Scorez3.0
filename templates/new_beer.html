@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block header %}Nytt øl{% endblock %}
+
+{% block body %}
+	<form action="{{ url_for('add_new_beer') }}" method="POST">
+		{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
+		<table class="table">
+			<tr>
+				<td>Navn på ølet:</td>
+				<td><input type="text" name="beer_name"></td>
+			</tr>
+			<tr>
+				<td>Type:</td>
+				<td>
+					<select name="beer_type" required>
+						{% for type in beer_types %}
+							<option value="{{ type }}">{{ type }}</option>
+						{% endfor %}
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td></td>
+				<td>
+					<input class="btn btn-default" type="submit" value="Lagre" name="submitButton">
+					<input class="btn btn-default" type="submit" value="Avbryt" name="submitButton">
+				</td>
+			</tr>
+		</table>
+	</form>
+{% endblock %}

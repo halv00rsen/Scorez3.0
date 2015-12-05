@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Scorez</title>
+
+    <!-- Bootstrap -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+
+  	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+	  	<div class="container">
+	  		<div class="navbar-header">
+	    		<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+			      <span class="icon-bar"></span>
+			      <span class="icon-bar"></span>
+			      <span class="icon-bar"></span>
+	    		</button>    
+	  		<a class="navbar-brand" href="{{ url_for('home') }}">Scorez</a>
+            </div>
+	  		<div class="navbar-collapse collapse">
+	    		<ul class="nav navbar-nav navbar-left">
+	        		<li><a href="{{ url_for('home') }}">Hjem</a></li>
+            		<li><a href="{{ url_for('add_new_beer') }}">Nytt øl</a></li>
+            		{% if session.admin %}
+            			<li class="dropdown">
+            				<a href="#" data-toggle="dropdown" class="dropdown-toggle">Admin
+            				<b class="caret"></b>
+            				</a>
+            				<ul class="dropdown-menu">
+            					<li><a href="{{ url_for('user_page_admin') }}">Brukere</a></li>
+            					<li><a href="{{ url_for('types_page_admin') }}">Typer</a></li>
+            				</ul>
+            			</li>
+
+            		{% endif %}
+	    		</ul>
+	    		<ul class="nav navbar-nav navbar-right">
+            		<li><p class="navbar-text">Logget inn som <a href="{{ url_for('user_page') }}" class="navbar-link">{{ session.username }}</a></p></li>
+	      			<li>
+		            	<form action="{{ url_for('logout') }}" method="GET">
+		            	<input class="btn btn-default navbar-btn btn-sm" type="submit" value="Logg ut">
+		            	</form>
+            		</li>
+	    		</ul>
+	  		</div>
+	  	</div>
+	</nav>
+
+
+
+    <div class="container" style="min-height: 30px">
+        <ul class="list-inline">
+            <li>
+                <h3 style="padding-right: 30px; margin-top:70px;">{% block header %} {% endblock %}<h3>
+            </li>
+            <li>
+                <p hidden id="message"></p>
+            </li>
+        </ul>
+    </div>
+
+    <div class="container">
+
+		{% block body %}
+
+		{% endblock %}
+
+    </div><!-- /.container -->
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+        var show_message = function(msg){
+            $("#message").html(msg);
+            $("#message").fadeIn(800, function() {
+                setTimeout(function(){$("#message").fadeOut(1000)}, 3000);
+            });
+        }
+
+    </script>
+
+    {% block scripts %}
+
+    {% endblock %}
+  </body>
+</html>

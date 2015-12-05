@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block header %}Ny øltype{% endblock %}
+{% block body %}
+
+	<table class="table">
+		<tr>
+			<td>Navn på typen</td>
+			<td><input type="text" id="type_name"></td>
+		</tr>
+		<tr>
+			<!-- <td><p hidden id="message"></p></td> -->
+			<td></td>
+			<td><button id="save_button" class="btn btn-default">Lagre</button></td>
+		</tr>
+	</table>
+
+	<h3>Øltyper</h3>
+
+	<table class="table" id="type_table">
+	{% for type in types %}
+		<tr id="{{ type }}">
+			<td>{{ type }}</td>
+			<td>
+				<button class="btn btn-danger btn-xs del-btn" name="{{ type }}">Slett</button>
+			</td>
+		</tr>
+				
+	{% endfor %}
+	</table>
+
+{% endblock %}
+
+{% block scripts %}
+	
+	<script type="text/javascript">
+
+		$(".del-btn").click(function() {
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('type_handler') }}",
+				data: JSON.stringify({
+					"type": this.name,
+					"action": "delete"
+				}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result !== "false"){
+						$("#" + result).remove();
+						show_message("Typen ble fjernet.");
+					}
+					else
+						show_message("Type ble ikke fjernet.");
+
+				}
+			});
+		});
+
+		$("#save_button").click(function() {
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('type_handler') }}",
+				data: JSON.stringify({
+					"type": $("#type_name").val(),
+					"action": "add"
+				}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result === "true"){
+						$("#type_table").append("<tr><td>" + $("#type_name").val() + "</td><td><button class='btn btn-danger btn-xs del-btn' name=" + $("#type_name").val() + ">Slett</button></td></tr>");
+						show_message("Typen ble lagt til.");
+					}
+					else
+						show_message("Type ble ikke lagt til.");
+					$("#type_name").val("");
+				}
+			});
+		});
+
+	</script>
+
+{% endblock %}
