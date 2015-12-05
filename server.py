@@ -73,7 +73,9 @@ def delete_beer(beer_name, beer_type):
 	if is_admin():
 		g.db.execute("delete from Beer where name = ? and type = ?", [beer_name, beer_type])
 		g.db.commit()
-	return redirect(url_for("home"))
+		return "true"
+	return "false"
+	# return redirect(url_for("home"))
 
 
 @app.route("/logout")

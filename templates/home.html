@@ -80,7 +80,14 @@
 			if (delete_url){
 				$.ajax({
 					type: "POST",
-					url: delete_url
+					url: delete_url,
+					success: function(result) {
+						if (result === "true"){
+							$("#del-field").parent().parent().hide();
+							show_message("Ølet ble slettet.");
+						}else
+							show_message("Ølet ble ikke slettet.");
+					}
 				});
 			}
 		});
