@@ -1,6 +1,7 @@
 #! python3
 from server import init_db, hash_password, connect_db
 from getpass import getpass
+from os import path, makedirs
 
 if __name__ == "__main__":
 	print("Will create a new database")
@@ -12,7 +13,9 @@ if __name__ == "__main__":
 	if len(username) == 0 or len(password) == 0 or password != retype_pass:
 		print("Error! Username or password is empty.")
 	else:
-		with open("database.db", "w") as f:
+		if not path.exists("db"):
+			makedirs("db")
+		with open(path.join("db", "database.db"), "w") as f:
 			pass
 		init_db()
 		db = connect_db()

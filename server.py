@@ -1,6 +1,7 @@
 #! python3
 from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, g
 from contextlib import closing
+from os import path
 import sqlite3, hashlib, os
 
 server_config = "Scorez3.0.server_config"
@@ -8,7 +9,7 @@ server_config = "Scorez3.0.server_config"
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["SECRET_KEY"] = "emqHJD4P&YJdC-#yHL.3dX9JxLJ6K(1WRH18x72uji,^w8.301!$+;07Tb0V<7%"
-app.config["DATABASE"] = "database.db"
+app.config["DATABASE"] = path.join("db", "database.db")
 
 @app.route("/")
 def index():
