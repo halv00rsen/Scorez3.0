@@ -4,8 +4,6 @@ from contextlib import closing
 from os import path
 import sqlite3, hashlib, os
 
-server_config = "Scorez3.0.server_config"
-
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["SECRET_KEY"] = "emqHJD4P&YJdC-#yHL.3dX9JxLJ6K(1WRH18x72uji,^w8.301!$+;07Tb0V<7%"
@@ -45,7 +43,10 @@ def home():
 		return redirect(url_for("login"))
 	cur = g.db.execute("select name, type from Beer order by name asc")
 	beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
-	return render_template("home.html", beers=beers)
+	for beer in beers:
+		cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
+		beer["score"] = "%.2f" % float(sum(cur) / len(cur) if len(cur) else 0)
+	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
 @app.route("/add_beer", methods=["GET", "POST"])
 def add_new_beer():
@@ -187,7 +188,15 @@ def get_user_information():
 
 @app.route("/add_score", methods=["POST", "GET"])
 def add_score():
-	pass
+	if not is_logged_in():
+		return redirect(url_for("login"))
+	js = request.get_json()
+	beer, typ, point = js["beer_name"], js["beer_type"], int(js["points"])
+	if not len(g.db.execute("select 1 name from Beer where name = ? and type = ?", [beer, typ]).fetchall()) or point > 100 or point < 0 or point % 1 != 0:
+		return "false"
+	g.db.execute("insert into Score (beer, type, user, p) values (?,?,?,?)", [beer, typ, session["username"], point])
+	g.db.commit()
+	return "true"
 
 def get_beer_info(beer_name, beer_type):
 	scorez = g.db.execute("select user, p from Score where beer = ? and type = ?", [beer_name, beer_type]).fetchall()

@@ -15,9 +15,9 @@
 		<tbody>
 			{% for beer in beers %}
 			<tr>
-				<td>0.0</td>
-				<td>{{ beer.name }}</td>
-				<td>{{ beer.type }}</td>
+				<td>{{ beer.score }}</td>
+				<td class="beer_name">{{ beer.name }}</td>
+				<td class="beer_type">{{ beer.type }}</td>
 				<td>
 					<ul class="list-inline">
 						<li>
@@ -42,7 +42,7 @@
 			{% endfor %}
 			<ul id="points-field" class="list-inline" style="margin-top:10px;" hidden>
 				<li><input id="points" type="number" style="max-width: 60px;"></li>
-				<li><button class="btn btn-default btn-xs">Legg til</button></li>
+				<li><button class="btn btn-default btn-xs" id="add-points-btn">Legg til</button></li>
 			</ul>
 			<ul id="del-field" class="list-inline" style="margin-top:10px;" hidden>
 				<li>Er du sikker?</li>
@@ -70,6 +70,36 @@
 			$("#points").val("");
 			$("#points-field").fadeIn(1000, null);
 		}
+
+		$("#add-points-btn").click(function() {
+			siblings = is_active_button.parent().parent().parent().siblings();
+			var beer = {
+				beer_name: siblings[1].innerText,
+				beer_type: siblings[2].innerText,
+				points: $("#points").val()
+			};
+			if (beer["points"] > 100 || beer["points"] < 0 || beer["points"] % 1 !== 0){
+				show_message("Ugyldige poengverdier. Må være mellom 0-100 og være et heltall.");
+				$("#points").val("");
+				return;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('add_score') }}",
+				data: JSON.stringify(beer),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result === "true"){
+						show_message("Poeng ble gitt til " + beer["beer_name"] + " " + beer["beer_type"] + ".");
+					}else
+						show_message("Poengene ble ikke lagret");
+					$("#points").val("");
+					is_active_button.removeClass("active")
+					is_active_button = null;
+					$("#points-field").fadeOut(500, null);
+				}
+			});
+		});
 
 		$("#cancel-del").click(function() {
 			$("#del-field").hide();
