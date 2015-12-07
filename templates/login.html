@@ -16,30 +16,30 @@
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-	<title>Login</title>
+    <style type="text/css">
+    input {
+    	max-width: 200px;
+    }
+    </style>
 </head>
 <body>
 <div class="container">
 	<h1>Velkommen til Scorez</h1>
+	{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
+	<br>
 	<form action="{{ url_for('login') }}" method="POST">
-		{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
-	<table class="table">
-		<tr>
-			<td>Username:</td>
-			<td><input type="text" name="username"></td>
-		</tr>
-		<tr>
-			<td>Password:</td>
-			<td><input type="password" name="password"></td>
-		</tr>
-		<tr>
-			<td></td>
-			<td>
-				<input class="btn btn-default" type="submit" value="login">
-			</td>
-		</tr>
-	</table>
+		<div class="form-group row">
+			<input type="text" class="col-md-4 form-control " name="username" placeholder="Brukernavn">
+		</div>
+		<div class="row form-group">
+			<input type="password" class="form-control col-md-4" name="password" placeholder="Passord">
+		</div>
+		<input class="btn btn-default" type="submit" value="login">
 	</form>
 </div>
+ <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </body>
 </html>
