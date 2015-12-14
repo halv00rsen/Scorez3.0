@@ -2,6 +2,7 @@
 from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, g
 from contextlib import closing
 from os import path
+from functools import wraps
 import sqlite3, hashlib, os
 
 app = Flask(__name__)
@@ -27,18 +28,33 @@ def login():
 		error = "Wrong username/password."
 	return render_template("login.html", error=error)
 
-# def requires_login(f):
-# 	def is_logged_in(*args, **kwargs):
-# 		if "logged_in" in session and session["logged_in"]:
-# 			return f(*args, **kwargs)
-# 		return "Du er ikke logget inn.", 403
-# 	return is_logged_in
+def requires_login(f):
+	@wraps(f)
+	def is_logged_in(*args, **kwargs):
+		if "logged_in" in session and session["logged_in"]:
+			return f(*args, **kwargs)
+		return "Du er ikke logget inn.", 403
+	return is_logged_in
+
+def requires_admin(f):
+	@wraps(f)
+	def is_admin(*args, **kwargs):
+		if "admin" in session and session["admin"]:
+			return f(*args, **kwargs)
+		return "Du er ikke administrator", 403
+	return is_admin
+
+@app.route("/get_all_beers")
+@requires_login
+def get_all_beers():
+	
+	pass
 
 @app.route("/home")
-# @requires_login
+@requires_login
 def home():
-	if not is_logged_in():
-		return redirect(url_for("login"))
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	cur = g.db.execute("select name, type from Beer order by name asc")
 	beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
 	for beer in beers:
@@ -48,9 +64,10 @@ def home():
 	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
 @app.route("/add_beer", methods=["GET", "POST"])
+@requires_login
 def add_new_beer():
-	if not is_logged_in():
-		return redirect(url_for("login"))
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	if request.method == "POST":
 		if request.form["submitButton"] == "Avbryt":
 			return redirect(url_for("home"))
@@ -68,6 +85,8 @@ def add_new_beer():
 	return render_template("new_beer.html", beer_types=get_all_types())
 
 @app.route("/delete_beer/<beer_name>,<beer_type>", methods=["GET", "POST"])
+@requires_login
+@requires_admin
 def delete_beer(beer_name, beer_type):
 	if not is_logged_in():
 		return redirect(url_for("login"))
@@ -88,23 +107,24 @@ def logout():
 
 
 @app.route("/beer/<beer_name>,<beer_type>")
-# @requires_login
+@requires_login
 def show_beer_page(beer_name, beer_type):
-	if not is_logged_in():
-		return redirect(url_for("login"))
-
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	return render_template("beer_page.html", beer=get_beer_info(beer_name, beer_type))
 
 @app.route("/user")
+@requires_login
 def user_page():
-	if not is_logged_in():
-		return redirect(url_for("login"))
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	return render_template("user_page.html")
 
 @app.route("/change_password", methods=["POST"])
+@requires_login
 def change_password():
-	if not is_logged_in():
-		return redirect(url_for("login"))
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	js = request.get_json()
 	oldPass, newPass = js["old_password"], js["new_password"]
 	current_password = g.db.execute("select password from User where username = ?", [session["username"]]).fetchall()[0][0]
@@ -115,18 +135,22 @@ def change_password():
 	return "true"
 
 @app.route("/types_admin")
+@requires_login
+@requires_admin
 def types_page_admin():
-	if not is_logged_in():
-		return redirect(url_for("login"))
-	if is_admin():
-		return render_template("types_page.html", types=get_all_types())
-	return redirect(url_for("home"))
+	return render_template("types_page.html", types=get_all_types())
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
+	# if is_admin():
+	# return redirect(url_for("home"))
 
 @app.route("/type_handler", methods=["POST", "GET"])
+@requires_login
+@requires_admin
 def type_handler():
-	if not is_logged_in():
-		return redirect(url_for("login"))
-	if is_admin() and request.method == "POST":
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
+	if request.method == "POST":
 		js = request.get_json()
 		typ = js["type"]
 		if len(typ) == 0:
@@ -147,22 +171,26 @@ def type_handler():
 			# msg = "Typen {} ble slettet.".format(typ)
 			msg = typ
 		return msg
-	return redirect(url_for("home"))
+	return "Wrong method: requires POST"
 
 @app.route("/user_admin")
+@requires_login
+@requires_admin
 def user_page_admin():
-	if not is_logged_in():
-		return redirect(url_for("login"))
-	if is_admin():
-		get_user_information()
-		return render_template("admin.html", users=get_user_information())
-	return redirect(url_for("home"))
+	get_user_information()
+	return render_template("admin.html", users=get_user_information())
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
+	# if is_admin():
+	# return redirect(url_for("home"))
 
 @app.route("/create_user", methods=["POST", "GET"])
+@requires_login
+@requires_admin
 def create_user():
-	if not is_logged_in():
-		return redirect(url_for("login"))
-	if is_admin() and request.method == "POST":
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
+	if request.method == "POST":
 		js = request.get_json()
 		username, password, admin = js["username"], js["password"], js["admin"]
 		# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
@@ -177,7 +205,8 @@ def create_user():
 			error = "false"
 		return error
 		# return render_template("admin.html", error=error)
-	return redirect(url_for("home"))
+	# return redirect(url_for("home"))
+	return "Wrong method: requires POST"
 
 # @app.route("/get_user_info_admin")
 def get_user_information():
@@ -186,9 +215,10 @@ def get_user_information():
 	return urs
 
 @app.route("/add_score", methods=["POST", "GET"])
+@requires_login
 def add_score():
-	if not is_logged_in():
-		return redirect(url_for("login"))
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
 	js = request.get_json()
 	beer, typ, point = js["beer_name"], js["beer_type"], int(js["points"])
 	if not len(g.db.execute("select 1 name from Beer where name = ? and type = ?", [beer, typ]).fetchall()) or point > 100 or point < 0 or point % 1 != 0:
