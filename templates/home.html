@@ -6,6 +6,7 @@
 	<table class="table">
 		<thead>
 			<tr>
+				<!-- <th>Plassering</th> -->
 				<th>Poeng</th>
 				<th>Navn</th>
 				<th>Type</th>
@@ -15,11 +16,13 @@
 		<tbody>
 			{% for beer in beers %}
 			<tr>
-				<td>{{ beer.score }}</td>
+				<!-- <td>{{ beer.position }}</td> -->
+				<td>{{ "%.2f" % beer.score }}</td>
 				<td class="beer_name">{{ beer.name }}</td>
 				<td class="beer_type">{{ beer.type }}</td>
+				<td class="num_scorez" hidden>{{ beer.num_of_scorez }}</td>
 				<td>
-					<ul class="list-inline">
+					<ul class="list-inline ">
 						<li>
 							<form action="{{ url_for('show_beer_page', beer_name=beer.name, beer_type=beer.type) }}" method="GET">
 								<input class="btn btn-info btn-xs" type="submit" value="Vis">

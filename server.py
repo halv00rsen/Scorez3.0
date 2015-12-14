@@ -45,7 +45,8 @@ def home():
 	beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
 	for beer in beers:
 		cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
-		beer["score"] = "%.2f" % float(sum(cur) / len(cur) if len(cur) else 0)
+		beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
+		beer["num_of_scorez"] = len(cur)
 	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
 @app.route("/add_beer", methods=["GET", "POST"])
