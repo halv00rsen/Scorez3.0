@@ -5,9 +5,7 @@ from os import path
 import sqlite3, hashlib, os
 
 app = Flask(__name__)
-app.config["DEBUG"] = True
-app.config["SECRET_KEY"] = "emqHJD4P&YJdC-#yHL.3dX9JxLJ6K(1WRH18x72uji,^w8.301!$+;07Tb0V<7%"
-app.config["DATABASE"] = path.join("db", "database.db")
+app.config.from_pyfile("server_config.py")
 
 @app.route("/")
 def index():

@@ -57,5 +57,5 @@ docs/_build/
 target/
 
 database.db
-server_config
+server_config.py
 *.wsgi
