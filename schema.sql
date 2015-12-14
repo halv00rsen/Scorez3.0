@@ -1,5 +1,5 @@
 drop table if exists Beer;
-drop table if exists Beer_types;
+drop table if exists Beer_type;
 drop table if exists User;
 drop table if exists Score;
 create table User (
