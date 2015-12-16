@@ -23,5 +23,51 @@
 {% endblock %}
 
 {% block scripts %}
+	
+	<script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.23/angular.min.js"></script>
+	<script type="text/javascript">
 
+		var beer = function(name, score, num_scores, type) {
+			return {
+				"name": name,
+				"score": score,
+				"num_scores": num_scores,
+				"type": type
+			}
+		}
+
+		var get_html_beer = function(name, score, type) {
+			return "<tr id=" + name + "_" + type + "><td>" + score + "</td><td>" + name + "</td><td>" + type + "</td></tr>"
+		}
+
+		var beers = []
+
+		$.ajax({
+			type: "GET",
+			url: "{{ url_for('get_all_beers') }}" ,
+			success: function(result){
+				// console.log(result);
+				// console.log(result["beers"]);
+				beers = result["beers"]
+				beers.sort(function(a,b){return b["score"] - a["score"]})
+				for (a in beers){
+					// console.log(result["beers"][a]);
+					// var b = result["beers"][a];
+					var b = beers[a];
+					// beers.push(b);
+					var html = get_html_beer(b["name"], b["score"], b["type"]);
+					if (a == 0){
+						$("tbody").append(html);
+					}
+					else{
+						// beers[a - 1]["js"].append(html);
+						$("tbody").append(html);
+					}
+					b["js"] = $("#" + b["name"] + "_" + b["type"]);
+
+				}
+			}
+		});
+
+	</script>
 {% endblock %}

@@ -1,5 +1,5 @@
 #! python3
-from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, g
+from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, g, jsonify
 from contextlib import closing
 from os import path
 from functools import wraps
@@ -47,8 +47,13 @@ def requires_admin(f):
 @app.route("/get_all_beers")
 @requires_login
 def get_all_beers():
-	
-	pass
+	cur = g.db.execute("select name, type from Beer order by name asc")
+	beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
+	for beer in beers:
+		cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
+		beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
+		beer["num_of_scorez"] = len(cur)
+	return jsonify(beers=beers)
 
 @app.route("/home")
 @requires_login
@@ -61,7 +66,7 @@ def home():
 		cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
 		beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
 		beer["num_of_scorez"] = len(cur)
-	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
+	return render_template("home2.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
 @app.route("/add_beer", methods=["GET", "POST"])
 @requires_login
