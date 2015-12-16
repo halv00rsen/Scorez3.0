@@ -18,6 +18,16 @@
 		
 	</tbody>
 
+	<ul id="points-field" class="list-inline" style="margin-top:10px;" hidden>
+		<li><input id="points" type="number" style="max-width: 60px;"></li>
+		<li><button class="btn btn-default btn-xs" id="add-points-btn">Legg til</button></li>
+	</ul>
+	<ul id="del-field" class="list-inline" style="margin-top:10px;" hidden>
+		<li>Er du sikker?</li>
+		<li><button id="confirm-del" class="btn btn-danger btn-xs">Slett</button></li>
+		<li><button id="cancel-del" class="btn btn-info btn-xs">Avbryt</button></li>
+	</ul>
+
 </table>
 
 {% endblock %}
@@ -37,7 +47,7 @@
 		}
 
 		var get_html_beer = function(name, score, type) {
-			return "<tr id=" + name + "_" + type + "><td>" + score + "</td><td>" + name + "</td><td>" + type + "</td></tr>"
+			return "<tr id=" + name + "_" + type + "><td>" + score + "</td><td>" + name + "</td><td>" + type + "</td><td><ul class='list-inline'> <li><form action='' method='GET'><input class='btn btn-info btn-xs' type='submit' value='Vis'></form></li>{% if session.admin %}<li><button class='btn btn-danger btn-xs del-btn' value='{{ url_for('delete_beer_json') }}'>Slett</button></li>{% endif %}<li><button class='btn btn-success btn-xs point-btn'>Legg til poeng</button></li></ul></td></tr>"
 		}
 
 		var beers = []
@@ -66,6 +76,97 @@
 					b["js"] = $("#" + b["name"] + "_" + b["type"]);
 
 				}
+			}
+		});
+
+		var beers = [];
+
+		var is_active_button = null;
+		var delete_url = null;
+
+		var add_point_field = function(field) {
+			if ($("#del-field").is(":visible")){
+				$("#del-field").hide();
+				delete_url = null;
+			}
+			field.append($("#points-field"));
+			$("#points").val("");
+			$("#points-field").fadeIn(1000, null);
+		}
+
+		$("#add-points-btn").click(function() {
+			siblings = is_active_button.parent().parent().parent().siblings();
+			var beer = {
+				beer_name: siblings[1].innerText,
+				beer_type: siblings[2].innerText,
+				points: $("#points").val()
+			};
+			if (beer["points"] > 100 || beer["points"] < 0 || beer["points"] % 1 !== 0){
+				show_message("Ugyldige poengverdier. Må være mellom 0-100 og være et heltall.");
+				$("#points").val("");
+				return;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('add_score') }}",
+				data: JSON.stringify(beer),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result === "true"){
+						show_message("Poeng ble gitt til " + beer["beer_name"] + " " + beer["beer_type"] + ".");
+					}else
+						show_message("Poengene ble ikke lagret");
+					$("#points").val("");
+					is_active_button.removeClass("active")
+					is_active_button = null;
+					$("#points-field").fadeOut(500, null);
+				}
+			});
+		});
+
+		$("#cancel-del").click(function() {
+			$("#del-field").hide();
+			delete_url = null;
+		});
+
+		$("#confirm-del").click(function() {
+			if (delete_url){
+				$.ajax({
+					type: "POST",
+					url: delete_url,
+					success: function(result) {
+						if (result === "true"){
+							$("#del-field").parent().parent().hide();
+							show_message("Ølet ble slettet.");
+						}else
+							show_message("Ølet ble ikke slettet.");
+					}
+				});
+			}
+		});
+
+		$(".del-btn").click(function() {
+			if (is_active_button){
+				is_active_button.removeClass("active");
+				$("#points-field").hide();
+				is_active_button = null;
+			}
+			$(this).parent().parent().parent().append($("#del-field"));
+			delete_url = $(this).val();
+			$("#del-field").show();
+		});
+
+		$(".point-btn").click(function() {
+			if (!$(this).hasClass("active")){
+				if (is_active_button)
+					is_active_button.removeClass("active");
+				is_active_button = $(this);
+				is_active_button.addClass("active");
+				add_point_field(is_active_button.parent().parent().parent());
+			}else {
+				is_active_button.removeClass("active")
+				is_active_button = null;
+				$("#points-field").fadeOut(500, null);
 			}
 		});
 

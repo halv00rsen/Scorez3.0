@@ -3,10 +3,15 @@ from flask import Flask, session, redirect, url_for, escape, request, render_tem
 from contextlib import closing
 from os import path
 from functools import wraps
-import sqlite3, hashlib, os
+from users import Users
+import sqlite3, hashlib, os, logging, datetime
 
+
+# logging.basicConfig(filename=path.join("db", "scorez_log.log"), level=logging.DEBUG, format="%(asctime)s (%(levelname)s): %(message)s")
 app = Flask(__name__)
 app.config.from_pyfile("server_config.py")
+
+# users = Users()
 
 @app.route("/")
 def index():
@@ -24,6 +29,8 @@ def login():
 			session["logged_in"] = True
 			session["admin"] = cur[0][1] == 1
 			session["username"] = username
+			# logging.debug(username + " logged in.")
+			# logging.warning(username + " logged in.")
 			return redirect(url_for("home"))
 		error = "Wrong username/password."
 	return render_template("login.html", error=error)
@@ -32,6 +39,7 @@ def requires_login(f):
 	@wraps(f)
 	def is_logged_in(*args, **kwargs):
 		if "logged_in" in session and session["logged_in"]:
+			# users.add_user_activity(session["username"])
 			return f(*args, **kwargs)
 		return "Du er ikke logget inn.", 403
 	return is_logged_in
@@ -66,7 +74,7 @@ def home():
 		cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
 		beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
 		beer["num_of_scorez"] = len(cur)
-	return render_template("home2.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
+	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
 @app.route("/add_beer", methods=["GET", "POST"])
 @requires_login
@@ -93,18 +101,29 @@ def add_new_beer():
 @requires_login
 @requires_admin
 def delete_beer(beer_name, beer_type):
-	if not is_logged_in():
-		return redirect(url_for("login"))
-	if is_admin():
-		g.db.execute("delete from Beer where name = ? and type = ?", [beer_name, beer_type])
-		g.db.commit()
-		return "true"
-	return "false"
+	# if not is_logged_in():
+	# 	return redirect(url_for("login"))
+	g.db.execute("delete from Beer where name = ? and type = ?", [beer_name, beer_type])
+	g.db.commit()
+	return "true"
 	# return redirect(url_for("home"))
 
+@app.route("/delete_beer", methods=["POST"])
+@requires_login
+@requires_admin
+def delete_beer_json():
+	js = request.get_json()
+	deleted = False
+	if "beer" in js and "type" in js:
+		g.db.execute("delete from Beer where name = ? and type = ?", [js["beer"], js["type"]])
+		g.db.execute("delete from Score where beer = ? and type = ?", [js["beer"], js["type"]])
+		g.db.commit()
+		deleted = True
+	return jsonify(deleted=deleted)
 
 @app.route("/logout")
 def logout():
+	# users.remove_user(session["username"])
 	session.pop("logged_in", None)
 	session.pop("admin", None)
 	session.pop("username", None)
@@ -117,6 +136,13 @@ def show_beer_page(beer_name, beer_type):
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
 	return render_template("beer_page.html", beer=get_beer_info(beer_name, beer_type))
+
+@app.route("/show_beer")
+def show_beer_page_json():
+	js = request.get_json()
+	if "beer_name" in js and "beer_type" in js:
+		return render_template("beer_page.html", beer=get_beer_info(js["beer_name"], js["beer_type"]))
+	return redirect(url_for("home"))
 
 @app.route("/user")
 @requires_login
@@ -178,11 +204,22 @@ def type_handler():
 		return msg
 	return "Wrong method: requires POST"
 
+@app.route("/delete_score", methods=["POST"])
+@requires_login
+def delete_score():
+	js = request.get_json()
+	if "beer" in js and "type" in js and "user" in js and "point" in js:
+		if js["user"] == session["username"] or session["admin"]: 
+			g.db.execute("delete from Score where beer = ? and type = ? and user = ? and p = ?", [js["beer"], js["type"], js["user"], js["point"]])
+			g.db.commit()
+			return jsonify(deleted=True)
+	return jsonify(deleted=False)			
+
 @app.route("/user_admin")
 @requires_login
 @requires_admin
 def user_page_admin():
-	get_user_information()
+	# get_user_information()
 	return render_template("admin.html", users=get_user_information())
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
@@ -213,6 +250,12 @@ def create_user():
 	# return redirect(url_for("home"))
 	return "Wrong method: requires POST"
 
+@app.route("/users_logged_in")
+@requires_login
+@requires_admin
+def get_users_logged_in():
+	return jsonify(nums=users.get_num_logged_users())
+
 # @app.route("/get_user_info_admin")
 def get_user_information():
 	urs = [dict(username=row[0], admin=row[1]) for row in g.db.execute("select username, admin from User").fetchall()]
@@ -227,14 +270,14 @@ def add_score():
 	js = request.get_json()
 	beer, typ, point = js["beer_name"], js["beer_type"], int(js["points"])
 	if not len(g.db.execute("select 1 name from Beer where name = ? and type = ?", [beer, typ]).fetchall()) or point > 100 or point < 0 or point % 1 != 0:
-		return "false"
+		return jsonify(added=False)
 	g.db.execute("insert into Score (beer, type, user, p) values (?,?,?,?)", [beer, typ, session["username"], point])
 	g.db.commit()
-	return "true"
+	return jsonify(added=True)
 
 def get_beer_info(beer_name, beer_type):
 	scorez = g.db.execute("select user, p from Score where beer = ? and type = ?", [beer_name, beer_type]).fetchall()
-	return {"beer_name": beer_name, "beer_type": beer_type}
+	return {"beer_name": beer_name, "beer_type": beer_type, "scores": scorez}
 
 def get_all_types():
 	return [typ[0] for typ in g.db.execute("select * from Beer_type order by name asc").fetchall()]
@@ -246,9 +289,6 @@ def is_logged_in(*args, **kwargs):
 	if "logged_in" in session and session["logged_in"]:
 		return True
 	return False
-
-def valid_login(username, password):
-	return True, True
 
 def hash_password(password):
 	return hashlib.sha224(str(password).encode("ascii")).hexdigest()

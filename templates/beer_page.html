@@ -1,12 +1,110 @@
 {% extends "base.html" %}
 
-{% block header %} {{ beer["beer_name"] }} {% endblock %}
+{% block header %} Ølsiden {% endblock %}
 
 {% block body %}
 
-	<form action="{{ url_for('delete_beer', beer_name=beer['beer_name'], beer_type=beer['beer_type']) }}" method="POST">
+	<h4>Navn: {{ beer["beer_name"] }}</h4>
+	<h4>Type: {{ beer["beer_type"] }}</h4>
+	<h4 id="average-score"></h4>
+	<ul id="points-field" class="list-inline" style="margin-top:10px;">
+		<li>Legg til poeng:</li>
+		<li><input id="points" type="number" style="max-width: 60px;"></li>
+		<li><button class="btn btn-default btn-xs" id="add-points-btn">Legg til</button></li>
+	</ul>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Bruker</th>
+				<th>Poeng</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for usr, score in beer["scores"] %}
+			<tr>
+				<td>{{ usr }}</td>
+				<td>{{ score }}</td>
+				<td>
+					{% if session.username == usr or session.admin %}
+					<button class="btn btn-danger btn-xs del-btn">Slett</button>
+					{% endif %}
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	<!-- <form action="{{ url_for('delete_beer', beer_name=beer['beer_name'], beer_type=beer['beer_type']) }}" method="POST">
 		<input type="submit" value="Slett">
 		<p class="glyphicon glyphicon-remove"></p>
-	</form>
+	</form> -->
+
+{% endblock %}
+
+{% block scripts %}
+
+	<script type="text/javascript">
+
+		var type = '{{ beer["beer_type"] }}';
+		var name = "{{ beer['beer_name'] }}";
+		var username = "{{ session.username }}";
+
+		$(".del-btn").click(function() {
+			var t = $(this);
+			var data = {
+				beer: name,
+				type: type,
+				user: $(this).parent().siblings()[0].innerText,
+				point: $(this).parent().siblings()[1].innerText
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('delete_score') }}",
+				data: JSON.stringify(data),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(res) {
+					if (res["deleted"]) {
+						show_message("Poenggivningen ble slettet.");
+						t.parent().parent().remove();
+						var score = 0;
+						var nums = 0;
+						// for (a in $("tbody").){
+						// 	console.log(a);
+						// }
+					}else
+						show_message("Poenggivningen ble ikke slettet.");
+				}
+			});
+		});
+
+		$("#add-points-btn").click(function() {
+			var beer = {
+				beer_name: name,
+				beer_type: type,
+				points: $("#points").val()
+			}
+			if (beer["points"] > 100 || beer["points"] < 0 || beer["points"] % 1 !== 0){
+				show_message("Ugyldige poengverdier. Må være mellom 0-100 og være et heltall.");
+				$("#points").val("");
+				return;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('add_score') }}",
+				data: JSON.stringify(beer),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result["added"]){
+						show_message(beer["points"] + " poeng ble lagret.");
+						$("tbody").append("<tr><td>" + username + "</td><td>" + beer["points"] + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>")
+					}else
+						show_message("Poengene ble ikke lagret.");
+					$("#points").val("");
+
+				}
+			});
+		});
+
+	</script>
 
 {% endblock %}

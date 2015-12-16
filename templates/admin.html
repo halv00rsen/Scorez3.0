@@ -5,15 +5,15 @@
 
 		<table class="table">
 			<tr>
-				<td>Username:</td>
+				<td>Brukernavn:</td>
 				<td><input type="text" name="username" id="username"></td>
 			</tr>
 			<tr>
-				<td>Password:</td>
+				<td>Passord:</td>
 				<td><input type="password" name="password" id="password"></td>
 			</tr>
 			<tr>
-				<td>Admin:</td>
+				<td>Administrator:</td>
 				<td><input type="checkbox" name="admin" id="admin"></td>
 			</tr>
 			<tr>
@@ -25,6 +25,7 @@
 		</table>
 
 		<h3>Brukere</h3>
+		<h4>Brukere logget inn: <span id="usr-logged-in"></span></h4>
 		<table class="table">
 			<thead>
 				<tr>
@@ -76,6 +77,18 @@
 				}
 			});
 		});
+
+		setInterval(function() {
+		$.ajax({
+			type: "GET",
+			url: "{{ url_for('get_users_logged_in') }}",
+			success: function(result) {
+				console.log(result);
+				$("#usr-logged-in").html(result);
+			}
+		});
+	}, 10000);
+
 
 	</script>
 {% endblock %}
