@@ -254,7 +254,8 @@ def create_user():
 @requires_login
 @requires_admin
 def get_users_logged_in():
-	return jsonify(nums=users.get_num_logged_users())
+	# return jsonify(nums=users.get_num_logged_users())
+	return jsonify(nums=1)
 
 # @app.route("/get_user_info_admin")
 def get_user_information():

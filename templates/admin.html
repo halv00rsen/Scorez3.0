@@ -78,16 +78,16 @@
 			});
 		});
 
-		setInterval(function() {
-		$.ajax({
-			type: "GET",
-			url: "{{ url_for('get_users_logged_in') }}",
-			success: function(result) {
-				console.log(result);
-				$("#usr-logged-in").html(result);
-			}
-		});
-	}, 10000);
+	// 	setInterval(function() {
+	// 	$.ajax({
+	// 		type: "GET",
+	// 		url: "{{ url_for('get_users_logged_in') }}",
+	// 		success: function(result) {
+	// 			console.log(result);
+	// 			$("#usr-logged-in").text(result["nums"]);
+	// 		}
+	// 	});
+	// }, 10000);
 
 
 	</script>
