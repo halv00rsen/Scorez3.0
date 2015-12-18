@@ -2,12 +2,16 @@
 from flask import Flask, session, redirect, url_for, escape, request, render_template, flash, g
 from contextlib import closing
 from os import path
+from functools import wraps
 import sqlite3, hashlib, os
 
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["SECRET_KEY"] = "emqHJD4P&YJdC-#yHL.3dX9JxLJ6K(1WRH18x72uji,^w8.301!$+;07Tb0V<7%"
 app.config["DATABASE"] = path.join("db", "database.db")
+
+# app.config.from_pyfile("navn_på_fil")
+# app.wsgi_app = ProxyFix(app.wsgi_app)
 
 @app.route("/")
 def index():
@@ -29,15 +33,16 @@ def login():
 		error = "Wrong username/password."
 	return render_template("login.html", error=error)
 
-# def requires_login(f):
-# 	def is_logged_in(*args, **kwargs):
-# 		if "logged_in" in session and session["logged_in"]:
-# 			return f(*args, **kwargs)
-# 		return "Du er ikke logget inn.", 403
-# 	return is_logged_in
+def requires_login(f):
+	@wraps(f)
+	def is_logged_in(*args, **kwargs):
+		if "logged_in" in session and session["logged_in"]:
+			return f(*args, **kwargs)
+		return "Du er ikke logget inn.", 403
+	return is_logged_in
 
 @app.route("/home")
-# @requires_login
+@requires_login
 def home():
 	if not is_logged_in():
 		return redirect(url_for("login"))
@@ -89,7 +94,7 @@ def logout():
 
 
 @app.route("/beer/<beer_name>,<beer_type>")
-# @requires_login
+@requires_login
 def show_beer_page(beer_name, beer_type):
 	if not is_logged_in():
 		return redirect(url_for("login"))

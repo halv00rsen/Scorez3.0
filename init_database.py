@@ -5,6 +5,11 @@ from os import path, makedirs
 
 if __name__ == "__main__":
 	print("Will create a new database")
+	if path.isdir("db") and path.exists(path.join("db", "database.db")):
+		inp = input("A database already exists. Do you want to reset current database? (y/n) ")
+		if inp != "y":
+			print("Aborting...")
+			
 	print("You will need an admin account.")
 	username = input("Username: ")
 	password = getpass("Password: ")
@@ -13,7 +18,7 @@ if __name__ == "__main__":
 	if len(username) == 0 or len(password) == 0 or password != retype_pass:
 		print("Error! Username or password is empty.")
 	else:
-		if not path.exists("db"):
+		if not path.isdir("db"):
 			makedirs("db")
 		with open(path.join("db", "database.db"), "w") as f:
 			pass
