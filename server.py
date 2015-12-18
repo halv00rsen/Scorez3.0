@@ -236,6 +236,11 @@ def delete_user():
 	if "username" in js:
 		if session["username"] == js["username"]:
 			return jsonify(deleted=False, msg="Kan ikke slette deg selv.")
+		usr = g.db.execute("select admin from User where username = ?", [js["username"]]).fetchall()
+		if not usr:
+			return jsonify(deleted=False, msg="Brukeren {} finnes ikke.".format(js["username"]))
+		elif usr[0][0]:
+			return jsonify(deleted=False, msg="Kan ikke slette andre administratorer.")
 		g.db.execute("delete from User where username = ?", [js["username"]])
 		g.db.execute("delete from Score where user = ?", [js["username"]])
 		g.db.commit()
