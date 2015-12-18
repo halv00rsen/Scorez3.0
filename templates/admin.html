@@ -40,7 +40,7 @@
 						<td>{{ user.username }}</td>
 						<td>{{ "Ja" if user.admin else "Nei" }}</td>
 						<td>
-							<button class="btn btn-danger btn-xs del-btn">Slett</button>
+							<button class="btn btn-danger btn-xs del-btn" name="{{ user.username }}">Slett</button>
 						</td>
 					</tr>
 				{% endfor %}
@@ -74,6 +74,25 @@
 					$("#username").val("");
 					$("#password").val("");
 					$("#admin").prop('checked', false);
+				}
+			});
+		});
+
+		$(".del-btn").click(function(){
+			var self = $(this);
+			var username = self[0].name;
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('delete_user') }}",
+				contentType: 'application/json;charset=UTF-8',
+				data: JSON.stringify({username: username}),
+				success: function(result){
+					if (result["deleted"]){
+						show_message("Brukeren " + username + " ble slettet.");
+						self.parent().parent().remove();
+					}
+					if (result["msg"])
+						show_message(result["msg"]);
 				}
 			});
 		});

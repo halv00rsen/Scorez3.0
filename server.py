@@ -228,6 +228,20 @@ def user_page_admin():
 	# if is_admin():
 	# return redirect(url_for("home"))
 
+@app.route("/delete_user", methods=["POST", "GET"])
+@requires_login
+@requires_admin
+def delete_user():
+	js = request.get_json()
+	if "username" in js:
+		if session["username"] == js["username"]:
+			return jsonify(deleted=False, msg="Kan ikke slette deg selv.")
+		g.db.execute("delete from User where username = ?", [js["username"]])
+		g.db.execute("delete from Score where user = ?", [js["username"]])
+		g.db.commit()
+		return jsonify(deleted=True)
+	return jsonify(deleted=False)
+
 @app.route("/create_user", methods=["POST", "GET"])
 @requires_login
 @requires_admin
