@@ -3,20 +3,65 @@ from server import init_db, hash_password, connect_db
 from getpass import getpass
 from os import path, makedirs
 
-if __name__ == "__main__":
-	print("Will create a new database")
+def config_file_ok():
+	if path.exists("server_config.py"):
+		with open("server_config.py", "r") as f:
+			data = f.readlines()
+		h = {"DEBUG": False, "DATABASE": False, "SECRET_KEY": False}
+		for a in data:
+			a = a.strip()
+			if a.startswith("DEBUG"):
+				h["DEBUG"] = True
+			elif a.startswith("DATABASE"):
+				h["DATABASE"] = True
+			elif a.startswith("SECRET_KEY"):
+				h["SECRET_KEY"] = True
+		for a in h:
+			if not h[a]:
+				print("Config file does not contain {}. Creating a new config file.".format(a))
+				return False
+		return True
+	print("Config file does not exists. Creating a new one.")
+	return False
+
+def init():
+	if __name__ != "__main__":
+		return "ERROR: Must start from terminal."
+	print("Initializes the server config and database.")
+	reset = False
+	conf = config_file_ok()
+	if conf:
+		inp = input("Config file looks ok. Do you want to reset it (y/n)?")
+		reset = inp == "y"
+		if reset:
+			print("Will create a new config file.")
+	if reset or not conf:
+		# db = input("Database name: ")
+		# if not db:
+		# 	print("No database name. Aborting...")
+		# 	return None
+		secret_key = input("Super secret key: ")
+		if not secret_key:
+			print("Need a secret key. Aborting...")
+			return
+		with open("server_config.py", "w") as f:
+			f.write("DEBUG = True\n")
+			f.write("SECRET_KEY = '{}'\n".format(secret_key))
+			f.write("DATABASE = 'database.db'")
+
 	if path.isdir("db") and path.exists(path.join("db", "database.db")):
 		inp = input("A database already exists. Do you want to reset current database? (y/n) ")
 		if inp != "y":
-			print("Aborting...")
-			
+			print("Database was not reseted.")
+			return None
+	print("Will initialize a new database.")
 	print("You will need an admin account.")
 	username = input("Username: ")
 	password = getpass("Password: ")
 	retype_pass = getpass("Retype password: ")
 
 	if len(username) == 0 or len(password) == 0 or password != retype_pass:
-		print("Error! Username or password is empty.")
+		print("Error! Username or password is empty. Aborting...")
 	else:
 		if not path.isdir("db"):
 			makedirs("db")
@@ -35,3 +80,6 @@ if __name__ == "__main__":
 		finally:
 			if db:
 				db.close()
+
+if __name__ == "__main__":
+	init()
