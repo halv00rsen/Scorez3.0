@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block header %}Grupper{% endblock %}
+
+{% block body %}
+	
+	<h4>Ny gruppe</h4>
+	<table class="table">
+		<tr>
+			<td>Navn:</td>
+			<td><input id="group-name" type="text"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><button class="btn btn-default" id="create-group">Lag gruppe</button></td>
+		</tr>
+	</table>
+
+	<h4>Dine grupper</h4>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Gruppenavn</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody id="group-table">
+			{% for group in groups %}
+			<tr>
+				<td>{{ group.name }}</td>
+				<td>
+					<ui class="list-inline">
+						<li>
+							<form action="{{ url_for('show_group', group_name=group.name, owner=session.username) }}">
+								<input type="submit" class="btn btn-default btn-xs" value="Vis">
+							</form>
+						</li>
+						<li><button class="btn btn-danger btn-xs del-btn">Slett</button></li>
+					</ui>
+				</td>
+			</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+
+	<br>
+	<h4>Grupper du er medlem av</h4>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Gruppenavn</th>
+				<th>Eier</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for group in other_groups %}
+
+				<td>{{ group.name }}</td>
+				<td>{{ group.owner }}</td>
+				<td>
+					<ul class="list-inline">
+						<li>
+							<form action="{{ url_for('show_group', group_name=group.name, owner=group.owner) }}">
+								<input type="submit" class="btn btn-default btn-xs" value="Vis">
+							</form>
+						</li>
+						<li>
+							<button class="btn btn-warning btn-xs leave-btn">Forlat gruppen</button>
+						</li>
+					</ul>
+				</td>
+
+			{% endfor %}
+		</tbody>
+	</table>
+
+{% endblock %}
+
+{% block scripts %}
+
+	<script type="text/javascript">
+
+		var owner = "{{ session.username }}";
+
+		$(".del-btn").click(function() {
+			var par = $(this).parent().parent().parent();
+			var name = par.siblings()[0].innerText;
+			$.ajax({
+				type: "POST",
+				contentType: 'application/json;charset=UTF-8',
+				url: "{{ url_for('delete_group') }}",
+				data: JSON.stringify({
+					group: name,
+					owner: owner
+				}),
+				success: function(res) {
+					if (res["success"]){
+						show_message("Gruppen " + name + " ble slettet.");
+						par.parent().remove();
+					}
+					if (res["msg"])
+						show_message(res["msg"]);
+				}
+			});
+		});
+
+		$(".leave-btn").click(function() {
+			var yeah = $(this).parent().parent().parent();
+			var par = yeah.siblings();
+			var group = par[0].innerText;
+			var owner = par[1].innerText;
+			$.ajax({
+				type: "POST",
+				contentType: 'application/json;charset=UTF-8',
+				url: "{{ url_for('leave_group') }}",
+				data: JSON.stringify({
+					group: group,
+					owner: owner
+				}),
+				success: function(res) {
+					if (res["success"]){
+						show_message("Du har nå forlatt " + owner + "s gruppe " + group + ".");
+						yeah.parent().remove();
+					}
+					if (res["msg"])
+						show_message(res["msg"]);
+				}
+			});
+		});
+
+		$("#create-group").click(function() {
+			var name = $("#group-name").val();
+			console.log(name);
+			if (!name.length){
+				show_message("Må ha en lengde på gruppen.");
+				return;
+			}
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('create_new_group') }}",
+				contentType: 'application/json;charset=UTF-8',
+				data: JSON.stringify({group: name}),
+				success: function(res) {
+					if (res["success"]){
+						show_message("Gruppen " + name + " ble laget.");
+						$("#group-name").val("");
+						$("#group-table").append("<tr><td>" + name + "</td><td><ui class='list-inline'><li><form action='{{ url_for('show_group', group_name=" + name + ", owner=session.username) }}'><input type='submit' class='btn btn-default btn-xs' value='Vis'></form></li><li><button class='btn btn-danger btn-xs del-btn'>Slett</button></li></ui></td></tr>")
+					}
+					else if (res["msg"]){
+						show_message(res["msg"]);
+					}
+					else
+						show_message("Gruppen ble ikke laget.");
+				}
+			});
+		});
+
+	</script>
+
+{% endblock %}

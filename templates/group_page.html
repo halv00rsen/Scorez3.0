@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block header %} {{group_name}} {% endblock %}
+
+{% block body %}
+
+	<h4>Eier: {{ owner }}</h4>
+
+	<br>
+	{% if owner == session.username %}
+	<h4>Legg til brukere i gruppen</h4>
+	<table class="table">
+		<tr>
+			<td>Brukernavn:</td>
+			<td><input type="text" id="username"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td><button id="add-user" class="btn btn-default">Legg til</button></td>
+		</tr>
+	</table>
+	{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+
+	<script type="text/javascript">
+
+		var group_name = "{{ group_name }}";
+
+		$("#add-user").click(function(){
+			var username = $("#username").val();
+			$.ajax({
+				type: "POST",
+				contentType: 'application/json;charset=UTF-8',
+				url: "{{ url_for('add_user_to_group') }}",
+				data: JSON.stringify({user: username, group: group_name}),
+				success: function(res) {
+					if (res["success"]){
+						show_message("Brukeren " + username + " ble lagt til gruppen.");
+					}
+					if (res["msg"]){
+						show_message(res["msg"]);
+					}
+					$("#username").val("");
+				}
+			});
+		});
+
+	</script>
+
+{% endblock %}

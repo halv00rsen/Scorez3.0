@@ -309,6 +309,110 @@ def add_score():
 	g.db.commit()
 	return jsonify(added=True)
 
+
+@app.route("/groups")
+@requires_login
+def get_groups():
+	groups = [dict(name=row[0]) for row in g.db.execute("select name from Groupi where owner = ?", [session["username"]]).fetchall()]
+	other_groups = [dict(name=row[0], owner=row[1]) for row in g.db.execute("select name, owner from GroupRelation where user = ?", [session["username"]]).fetchall()]
+	# print(groups)
+	# print(other_groups)
+	return render_template("groups.html", groups=groups, other_groups=other_groups)
+
+@app.route("/create_group", methods=["POST"])
+@requires_login
+def create_new_group():
+	js = request.get_json()
+	if not "group" in js:
+		return jsonify(success=False, msg="Wrong json")
+	if g.db.execute("select * from Groupi where name = ? and owner = ?", [js["group"], session["username"]]).fetchall():
+		return jsonify(success=False, msg="Gruppen eksisterer allerede.")
+	g.db.execute("insert into Groupi values (?,?)", [js["group"], session["username"]])
+	g.db.commit()
+	return jsonify(success=True)
+
+
+@app.route("/add_user_to_group", methods=["POST"])
+@requires_login
+def add_user_to_group():
+	js = request.get_json()
+	if not "group" in js and "user" not in js:
+		return jsonify(success=False, msg="Wrong json")
+	if js["user"] == session["username"]:
+		return jsonify(success=False, msg="Kan ikke legge til deg selv.")
+	if not user_exists(js["user"]):
+		return jsonify(success=False, msg="The user {} does not exist.".format(js["user"]))
+	if not g.db.execute("select 1 from Groupi where name = ? and owner = ?", [js["group"], session["username"]]).fetchall():
+		return jsonify(success=False, msg="Gruppen eksisterer ikke.")
+	if g.db.execute("select 1 from GroupRelation where name = ? and owner = ? and user = ?", [js["group"], session["username"], js["user"]]).fetchall():
+		return jsonify(success=False, msg="Brukeren {} er allerede i denne gruppen.".format(js["user"]))
+	g.db.execute("insert into GroupRelation values (?,?,?)", [js["group"], session["username"], js["user"]])
+	g.db.commit()
+	return jsonify(success=True)
+
+@app.route("/show_group/<group_name>,<owner>")
+@requires_login
+def show_group(group_name, owner):
+	if not group_name or not owner:
+		return redirect(url_for("home"))
+	if not g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall():
+		return redirect(url_for("home"))
+	relations = [a[0] for a in g.db.execute("select user from GroupRelation where name = ? and owner = ?",[group_name, owner]).fetchall()]
+	if session["username"] not in relations and owner != session["username"]:
+		return redirect(url_for("home"))
+	return render_template("group_page.html", group_name=group_name, owner=owner, relations=relations)
+
+@app.route("/leave_group", methods=["POST"])
+@requires_login
+def leave_group():
+	js = request.get_json()
+	if "group" not in js and "owner" not in js:
+		return jsonify(success=False, msg="Wrong json.")
+	group, owner = js["group"], js["owner"]
+	if owner == session["username"]:
+		return jsonify(success=False, msg="Kan ikke forlate egen gruppe, den må slettes.")
+	if user_exists(owner):
+		# g.db.execute("delete from Groupi where name = ? and owner = ?", [group, owner])
+		g.db.execute("delete from GroupRelation where name = ? and owner = ? and user = ?", [group, owner, session["username"]])
+		# delete scores given by this user
+		g.db.commit()
+		return jsonify(success=True)
+	return jsonify(success=False, msg="Eieren eksisterer ikke.")
+
+@app.route("/delete_group", methods=["POST"])
+@requires_login
+def delete_group():
+	js = request_get_json()
+	if "owner" not in js or "group" not in js:
+		return jsonify(success=False, msg="Wrong JSON.")
+	group, owner = js["group"], js["owner"]
+	if owner != session["username"]:
+		return jsonify(success=False, msg="Kan ikke slette andres grupper.")
+	if g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group, owner]).fetchall():
+		g.db.execute("delete from Groupi where name = ? and owner = ?", [group, owner])
+		g.db.execute("delete from GroupRelation where name = ? and owner = ?", [group, owner])
+		g.db.commit()
+		return jsonify(success=True)
+	return jsonify(success=False, msg="Gruppen eksisterer ikke.")
+
+def request_get_json():
+	if request:
+		try:
+			return request.get_json()
+		except:
+			print("ERROR: JSON object could not be loaded.")
+			return None
+	return None
+
+def user_exists(username):
+	if g.db and username:
+		return len(g.db.execute("select username from User where username = ?", [username]).fetchall()) != 0
+	return False
+
+def get_all_group_information(group, owner):
+
+	pass
+
 def get_beer_info(beer_name, beer_type):
 	scorez = g.db.execute("select user, p from Score where beer = ? and type = ?", [beer_name, beer_type]).fetchall()
 	return {"beer_name": beer_name, "beer_type": beer_type, "scores": scorez}
