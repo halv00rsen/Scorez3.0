@@ -26,7 +26,7 @@
 				<td>{{ usr }}</td>
 				<td>{{ score }}</td>
 				<td>
-					{% if session.username == usr or session.admin %}
+					{% if session.username == usr or session.local_admin %}
 					<button class="btn btn-danger btn-xs del-btn">Slett</button>
 					{% endif %}
 				</td>

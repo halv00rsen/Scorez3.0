@@ -5,7 +5,8 @@ drop table if exists Score;
 create table User (
 	username varchar(30) primary key,
 	password varchar(30) not null,
-	admin boolean not null
+	local_admin boolean not null,
+	system_admin boolean not null
 );
 create table Beer_type(
 	name varchar(30) primary key

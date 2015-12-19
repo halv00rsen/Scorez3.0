@@ -26,11 +26,13 @@ def login():
 	error = None
 	if request.method == "POST":
 		username, password = request.form["username"], request.form["password"]
-		cur = g.db.execute("select password, admin from User where username = ?", [username]).fetchall()
-		if len(cur) != 0 and cur[0][0] == hash_password(password):
+		cur = g.db.execute("select password, system_admin, local_admin from User where username = ?", [username]).fetchall()
+		if cur and cur[0][0] == hash_password(password):
 			session["logged_in"] = True
-			session["admin"] = cur[0][1] == 1
+			session["system_admin"] = cur[0][1] == 1
+			session["local_admin"] = cur[0][2] == 1
 			session["username"] = username
+
 			# logging.debug(username + " logged in.")
 			# logging.warning(username + " logged in.")
 			return redirect(url_for("home"))
@@ -46,13 +48,21 @@ def requires_login(f):
 		return "Du er ikke logget inn.", 403
 	return is_logged_in
 
-def requires_admin(f):
+def requires_system_admin(f):
 	@wraps(f)
 	def is_admin(*args, **kwargs):
-		if "admin" in session and session["admin"]:
+		if "system_admin" in session and session["system_admin"]:
 			return f(*args, **kwargs)
-		return "Du er ikke administrator", 403
+		return "Du har ikke tilgang til denne siden.", 403
 	return is_admin
+
+def requires_local_admin(f):
+	@wraps(f)
+	def is_local(*args, **kwargs):
+		if "local_admin" in session and session["local_admin"]:
+			return f(*args, **kwargs)
+		return "Du har ikke tilgang til denne siden", 403
+	return is_local
 
 @app.route("/get_all_beers")
 @requires_login
@@ -101,7 +111,7 @@ def add_new_beer():
 
 @app.route("/delete_beer/<beer_name>,<beer_type>", methods=["GET", "POST"])
 @requires_login
-@requires_admin
+@requires_local_admin
 def delete_beer(beer_name, beer_type):
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
@@ -112,7 +122,7 @@ def delete_beer(beer_name, beer_type):
 
 @app.route("/delete_beer", methods=["POST"])
 @requires_login
-@requires_admin
+@requires_local_admin
 def delete_beer_json():
 	js = request.get_json()
 	deleted = False
@@ -127,7 +137,8 @@ def delete_beer_json():
 def logout():
 	# users.remove_user(session["username"])
 	session.pop("logged_in", None)
-	session.pop("admin", None)
+	session.pop("local_admin", None)
+	session.pop("system_admin", None)
 	session.pop("username", None)
 	return redirect(url_for("login"))
 
@@ -169,7 +180,7 @@ def change_password():
 
 @app.route("/types_admin")
 @requires_login
-@requires_admin
+@requires_local_admin
 def types_page_admin():
 	return render_template("types_page.html", types=get_all_types())
 	# if not is_logged_in():
@@ -179,7 +190,7 @@ def types_page_admin():
 
 @app.route("/type_handler", methods=["POST", "GET"])
 @requires_login
-@requires_admin
+@requires_local_admin
 def type_handler():
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
@@ -219,7 +230,7 @@ def delete_score():
 
 @app.route("/user_admin")
 @requires_login
-@requires_admin
+@requires_system_admin
 def user_page_admin():
 	# get_user_information()
 	return render_template("admin.html", users=get_user_information())
@@ -230,57 +241,58 @@ def user_page_admin():
 
 @app.route("/delete_user", methods=["POST", "GET"])
 @requires_login
-@requires_admin
+@requires_system_admin
 def delete_user():
 	js = request.get_json()
 	if "username" in js:
 		if session["username"] == js["username"]:
 			return jsonify(deleted=False, msg="Kan ikke slette deg selv.")
-		usr = g.db.execute("select admin from User where username = ?", [js["username"]]).fetchall()
+		usr = g.db.execute("select system_admin from User where username = ?", [js["username"]]).fetchall()
 		if not usr:
 			return jsonify(deleted=False, msg="Brukeren {} finnes ikke.".format(js["username"]))
 		elif usr[0][0]:
-			return jsonify(deleted=False, msg="Kan ikke slette andre administratorer.")
+			return jsonify(deleted=False, msg="Kan ikke slette andre system-administratorer.")
 		g.db.execute("delete from User where username = ?", [js["username"]])
 		g.db.execute("delete from Score where user = ?", [js["username"]])
 		g.db.commit()
 		return jsonify(deleted=True)
 	return jsonify(deleted=False)
 
-@app.route("/create_user", methods=["POST", "GET"])
+@app.route("/create_user", methods=["POST"])
 @requires_login
-@requires_admin
+@requires_system_admin
 def create_user():
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
-	if request.method == "POST":
-		js = request.get_json()
-		username, password, admin = js["username"], js["password"], js["admin"]
-		# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
-		error = None
-		if not len(g.db.execute("select 1 username from User where username = ?", [username]).fetchall()):
-			g.db.execute("insert into User values (?,?,?)", [username, hash_password(password), admin])
-			g.db.commit()
-			# error = "Brukeren {} ble laget".format(username)
-			error = "true"
-		else:
-			# error = "Brukernavnet {} finnes allerede.".format(username)
-			error = "false"
-		return error
+	js = request.get_json()
+	if not ("username" in js and "password" in js and "system_admin" in js and "local_admin" in js):
+		return jsonify(success=False, msg="Wrong json.")
+	username, password, local_admin, system_admin = js["username"], js["password"], js["local_admin"], js["system_admin"]
+	# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
+	if not len(g.db.execute("select 1 username from User where username = ?", [username]).fetchall()):
+		if system_admin:
+			local_admin = True
+		g.db.execute("insert into User values (?,?,?,?)", [username, hash_password(password), local_admin, system_admin])
+		g.db.commit()
+		# error = "Brukeren {} ble laget".format(username)
+		error = False
+	else:
+		# error = "Brukernavnet {} finnes allerede.".format(username)
+		error = True
+	return jsonify(success=not error)
 		# return render_template("admin.html", error=error)
 	# return redirect(url_for("home"))
-	return "Wrong method: requires POST"
 
 @app.route("/users_logged_in")
 @requires_login
-@requires_admin
+@requires_system_admin
 def get_users_logged_in():
 	# return jsonify(nums=users.get_num_logged_users())
 	return jsonify(nums=1)
 
 # @app.route("/get_user_info_admin")
 def get_user_information():
-	urs = [dict(username=row[0], admin=row[1]) for row in g.db.execute("select username, admin from User").fetchall()]
+	urs = [dict(username=row[0], local_admin=row[1], system_admin=row[2]) for row in g.db.execute("select username, local_admin, system_admin from User").fetchall()]
 	# beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
 	return urs
 

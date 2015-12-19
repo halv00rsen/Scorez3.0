@@ -33,13 +33,15 @@
 	    		<ul class="nav navbar-nav navbar-left">
 	        		<li><a href="{{ url_for('home') }}">Hjem</a></li>
             		<li><a href="{{ url_for('add_new_beer') }}">Nytt øl</a></li>
-            		{% if session.admin %}
+            		{% if session.local_admin %}
             			<li class="dropdown">
             				<a href="#" data-toggle="dropdown" class="dropdown-toggle">Admin
             				<b class="caret"></b>
             				</a>
             				<ul class="dropdown-menu">
+                                {% if session.system_admin %}
             					<li><a href="{{ url_for('user_page_admin') }}">Brukere</a></li>
+                                {% endif %}
             					<li><a href="{{ url_for('types_page_admin') }}">Typer</a></li>
             				</ul>
             			</li>

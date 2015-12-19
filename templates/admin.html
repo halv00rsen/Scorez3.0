@@ -13,8 +13,12 @@
 				<td><input type="password" name="password" id="password"></td>
 			</tr>
 			<tr>
-				<td>Administrator:</td>
-				<td><input type="checkbox" name="admin" id="admin"></td>
+				<td>Lokal administrator:</td>
+				<td><input type="checkbox" name="local_admin" id="local_admin"></td>
+			</tr>
+			<tr>
+				<td>System-administrator:</td>
+				<td><input type="checkbox" name="system_admin" id="system_admin"></td>
 			</tr>
 			<tr>
 				<td></td>
@@ -30,6 +34,7 @@
 			<thead>
 				<tr>
 					<th>Brukernavn</th>
+					<th>Lokal admin</th>
 					<th>Administrator</th>
 					<th></th>
 				</tr>
@@ -38,7 +43,8 @@
 				{% for user in users %}
 					<tr>
 						<td>{{ user.username }}</td>
-						<td>{{ "Ja" if user.admin else "Nei" }}</td>
+						<td>{{ "Ja" if user.local_admin else "Nei" }}</td>
+						<td>{{ "Ja" if user.system_admin else "Nei" }}</td>
 						<td>
 							<button class="btn btn-danger btn-xs del-btn" name="{{ user.username }}">Slett</button>
 						</td>
@@ -57,7 +63,8 @@
 			var data = {
 				username: $("#username").val(),
 				password: $("#password").val(),
-				admin: $("#admin").is(":checked")
+				system_admin: $("#system_admin").is(":checked"),
+				local_admin: $("#local_admin").is(":checked")
 			}
 			$.ajax({
 				type: "POST",
@@ -65,12 +72,12 @@
 				url: "{{ url_for('create_user') }}",
 				data: JSON.stringify(data),
 				success: function(result) {
-					if (result === "true"){
+					if (result["success"]){
 						show_message("Brukeren " + $("#username").val() + " ble laget.");
-						$("#user-body").append("<tr><td>" + data.username + "</td><td>" + (data.admin ?"Ja": "Nei") + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>");
+						$("#user-body").append("<tr><td>" + data.username + "</td><td>" + (data.local_admin ?"Ja": "Nei") + "</td><td>" + (data.system_admin ? "Ja": "Nei") + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>");
 					}
 					else
-						show_message("Brukeren " + $("#username").val() + " ble ikke laget.");
+						show_message("Brukeren " + data["username"] + " ble ikke laget.");
 					$("#username").val("");
 					$("#password").val("");
 					$("#admin").prop('checked', false);
