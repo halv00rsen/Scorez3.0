@@ -20,6 +20,23 @@
 		</tr>
 	</table>
 	{% endif %}
+	<h4>Medlemmer</h4>
+	<table class="table">
+		<tr>
+			<td>{{ owner }}</td>
+			<td></td>
+		</tr>
+	{% for user in relations %}
+		<tr>
+			<td>{{ user }}</td>
+			<td>
+			{% if owner == session.username %}
+				<button class="btn btn-danger del-btn btn-xs" value="{{ user }}">Fjern bruker</button>
+			{% endif %}
+			</td>
+		</tr>
+	{% endfor %}
+	</table>
 
 {% endblock %}
 
