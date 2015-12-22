@@ -32,6 +32,11 @@ def login():
 			session["system_admin"] = cur[0][1] == 1
 			session["local_admin"] = cur[0][2] == 1
 			session["username"] = username
+			# session["groups"] = 
+			groups = [dict(name=row[0]) for row in g.db.execute("select name from Groupi where owner = ?", [session["username"]]).fetchall()]
+			other_groups = [dict(name=row[0], owner=row[1]) for row in g.db.execute("select name, owner from GroupRelation where user = ?", [session["username"]]).fetchall()]
+			session["your_groups"] = groups
+			session["other_groups"] = other_groups
 
 			# logging.debug(username + " logged in.")
 			# logging.warning(username + " logged in.")
@@ -45,7 +50,8 @@ def requires_login(f):
 		if "logged_in" in session and session["logged_in"]:
 			# users.add_user_activity(session["username"])
 			return f(*args, **kwargs)
-		return "Du er ikke logget inn.", 403
+		# return "Du er ikke logget inn.", 403
+		return render_template("login.html", error="Du må logge inn for å se denne siden.")
 	return is_logged_in
 
 def requires_system_admin(f):
@@ -140,6 +146,8 @@ def logout():
 	session.pop("local_admin", None)
 	session.pop("system_admin", None)
 	session.pop("username", None)
+	session.pop("other_groups", None)
+	session.pop("your_groups", None)
 	return redirect(url_for("login"))
 
 
@@ -329,6 +337,7 @@ def create_new_group():
 		return jsonify(success=False, msg="Gruppen eksisterer allerede.")
 	g.db.execute("insert into Groupi values (?,?)", [js["group"], session["username"]])
 	g.db.commit()
+	session["your_groups"].append(js["group"])
 	return jsonify(success=True)
 
 
@@ -376,6 +385,9 @@ def leave_group():
 		g.db.execute("delete from GroupRelation where name = ? and owner = ? and user = ?", [group, owner, session["username"]])
 		# delete scores given by this user
 		g.db.commit()
+		obj = {"owner": js["owner"], "name": js["group"]}
+		if obj in session["other_groups"]:
+			session["other_groups"].remove(obj)
 		return jsonify(success=True)
 	return jsonify(success=False, msg="Eieren eksisterer ikke.")
 

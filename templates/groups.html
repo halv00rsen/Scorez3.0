@@ -44,6 +44,7 @@
 		</tbody>
 	</table>
 
+	{% if other_groups %}
 	<br>
 	<h4>Grupper du er medlem av</h4>
 
@@ -58,6 +59,7 @@
 		<tbody>
 			{% for group in other_groups %}
 
+			<tr>
 				<td>{{ group.name }}</td>
 				<td>{{ group.owner }}</td>
 				<td>
@@ -72,11 +74,11 @@
 						</li>
 					</ul>
 				</td>
-
+			</tr>
 			{% endfor %}
 		</tbody>
 	</table>
-
+	{% endif %}
 {% endblock %}
 
 {% block scripts %}
