@@ -45,14 +45,25 @@ def init():
 			print("Need a secret key. Aborting...")
 			return
 		with open("server_config.py", "w") as f:
+			f.write("from os import path")
 			f.write("DEBUG = True\n")
 			f.write("SECRET_KEY = '{}'\n".format(secret_key))
-			f.write("DATABASE = 'database.db'")
+			f.write("DATABASE = path.join('db', 'database.db')")
 
 	if path.isdir("db") and path.exists(path.join("db", "database.db")):
-		inp = input("A database already exists. Do you want to reset current database? (y/n) ")
-		if inp != "y":
-			print("Database was not reseted.")
+		print("A database already exists.")
+		print("1. Reset current database.")
+		print("2. Transfer data to new database.")
+		print("3. Keep old database.")
+		inp = input("Action (1,2,3): ")
+		# inp = input("A database already exists. Do you want to reset current database? (y/n) ")
+		# if inp != "y":
+		# 	print("Database was not reseted.")
+		# 	return None
+		if inp == "2":
+			pass
+		elif inp != "1":
+			print("Old database keeped.")
 			return None
 	print("Will initialize a new database.")
 	print("You will need an admin account.")
