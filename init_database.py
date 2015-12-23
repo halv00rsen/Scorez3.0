@@ -45,7 +45,7 @@ def init():
 			print("Need a secret key. Aborting...")
 			return
 		with open("server_config.py", "w") as f:
-			f.write("from os import path")
+			f.write("from os import path\n")
 			f.write("DEBUG = True\n")
 			f.write("SECRET_KEY = '{}'\n".format(secret_key))
 			f.write("DATABASE = path.join('db', 'database.db')")
