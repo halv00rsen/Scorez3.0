@@ -1,5 +1,5 @@
 #! python3
-from server import init_db, hash_password, connect_db
+
 from getpass import getpass
 from os import path, makedirs
 
@@ -78,6 +78,7 @@ def init():
 			makedirs("db")
 		with open(path.join("db", "database.db"), "w") as f:
 			pass
+		from server import init_db, hash_password, connect_db
 		init_db()
 		db = connect_db()
 		try:
