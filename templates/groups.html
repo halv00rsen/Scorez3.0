@@ -26,24 +26,30 @@
 			</tr>
 		</thead>
 		<tbody id="group-table">
-			{% for group in groups %}
-			<tr>
-				<td>{{ group.name }}</td>
-				<td>
-					<ui class="list-inline">
-						<li>
-							<form action="{{ url_for('show_group', group_name=group.name, owner=session.username) }}">
-								<input type="submit" class="btn btn-default btn-xs" value="Vis">
-							</form>
-						</li>
-						<li><button class="btn btn-danger btn-xs del-btn">Slett</button></li>
-					</ui>
-				</td>
-			</tr>
-			{% endfor %}
+			{% if groups %}
+				{% for group in groups %}
+				<tr>
+					<td>{{ group.name }}</td>
+					<td>
+						<ui class="list-inline">
+							<li>
+								<form action="{{ url_for('show_group', group_name=group.name, owner=session.username) }}">
+									<input type="submit" class="btn btn-default btn-xs" value="Vis">
+								</form>
+							</li>
+							<li><button class="btn btn-danger btn-xs del-btn">Slett</button></li>
+						</ui>
+					</td>
+				</tr>
+				{% endfor %}
+			{% else %}
+				<tr id="remove-this">
+					<td>Her var det tomt! Lag en gruppe!</td>
+					<td></td>
+				</tr>
+			{% endif %}
 		</tbody>
 	</table>
-
 	{% if other_groups %}
 	<br>
 	<h4>Grupper du er medlem av</h4>
@@ -148,6 +154,9 @@
 				success: function(res) {
 					if (res["success"]){
 						show_message("Gruppen " + name + " ble laget.");
+						if ($("#remove-this").is(":visible")){
+							$("#remove-this").remove();
+						}
 						$("#group-name").val("");
 						$("#group-table").append("<tr><td>" + name + "</td><td><ui class='list-inline'><li><form action='{{ url_for('show_group', group_name=" + name + ", owner=session.username) }}'><input type='submit' class='btn btn-default btn-xs' value='Vis'></form></li><li><button class='btn btn-danger btn-xs del-btn'>Slett</button></li></ui></td></tr>")
 					}
