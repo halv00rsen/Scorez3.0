@@ -26,6 +26,8 @@ def login():
 	error = None
 	if request.method == "POST":
 		username, password = request.form["username"], request.form["password"]
+		if len(str(username).split()) != 1:
+			return render_template("login.html", error="Brukernavnet finnes ikke.")
 		cur = g.db.execute("select password, system_admin, local_admin from User where username = ?", [username]).fetchall()
 		if cur and cur[0][0] == hash_password(password):
 			session["logged_in"] = True
@@ -276,6 +278,8 @@ def create_user():
 	if not ("username" in js and "password" in js and "system_admin" in js and "local_admin" in js):
 		return jsonify(success=False, msg="Wrong json.")
 	username, password, local_admin, system_admin = js["username"], js["password"], js["local_admin"], js["system_admin"]
+	if len(str(username).split()) != 1:
+		return jsonify(success=False, msg="Brukernavn kan ikke inneholde mellomrom.")
 	# username, password, admin = request.form["username"], request.form["password"], "admin" in request.form
 	if not len(g.db.execute("select 1 username from User where username = ?", [username]).fetchall()):
 		if system_admin:
@@ -359,17 +363,38 @@ def add_user_to_group():
 	g.db.commit()
 	return jsonify(success=True)
 
+@app.route("/show_group_table/<group_name>,<owner>")
+@requires_login
+def show_group_table(group_name, owner):
+	rel = validate_group_info(group_name, owner)
+	if type(rel) == list:
+		# get all beers from a given group
+		cur = g.db.execute("select name, type from Beer order by name asc")
+		beers = [dict(name=row[0], type=row[1]) for row in cur.fetchall()]
+		for beer in beers:
+			cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ?", [beer["name"], beer["type"]]).fetchall()]
+			beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
+			beer["num_of_scorez"] = len(cur)
+		return render_template("group_table.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True), group_name=group_name, owner=owner, relations=rel)
+	return redirect(url_for("home"))
+
 @app.route("/show_group/<group_name>,<owner>")
 @requires_login
 def show_group(group_name, owner):
+	rel = validate_group_info(group_name, owner)
+	if type(rel) == list:
+		return render_template("group_page.html", group_name=group_name, owner=owner, relations=rel)
+	return redirect(url_for("home"))
+
+def validate_group_info(group_name, owner):
 	if not group_name or not owner:
-		return redirect(url_for("home"))
+		return False
 	if not g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall():
-		return redirect(url_for("home"))
+		return False
 	relations = [a[0] for a in g.db.execute("select user from GroupRelation where name = ? and owner = ?",[group_name, owner]).fetchall()]
 	if session["username"] not in relations and owner != session["username"]:
-		return redirect(url_for("home"))
-	return render_template("group_page.html", group_name=group_name, owner=owner, relations=relations)
+		return False
+	return relations
 
 @app.route("/leave_group", methods=["POST"])
 @requires_login

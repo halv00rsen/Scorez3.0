@@ -55,7 +55,7 @@
                             <li class="dropdown-header">Dine grupper</li>
                             <li class="divider"></li>
                             {% for group in session.your_groups %}
-                                <li><a href="{{ url_for('show_group', group_name=group.name, owner=session.username) }}">{{ group.name }}</a></li>
+                                <li><a href="{{ url_for('show_group_table', group_name=group.name, owner=session.username) }}">{{ group.name }}</a></li>
                             {% endfor %}
                             {% if session.other_groups %}
                                 <li class="divider"></li>
@@ -67,7 +67,7 @@
                                             <th>Eier</th>
                                         </tr>
                                         {% for group in session.other_groups %}
-                                        <tr class='group-row' data-href="{{ url_for('show_group', group_name=group.name, owner=group.owner) }}">
+                                        <tr class='group-row' data-href="{{ url_for('show_group_table', group_name=group.name, owner=group.owner) }}">
                                             <td>{{group.name}}</td>
                                             <td>{{group.owner}}</td>
                                         </tr>

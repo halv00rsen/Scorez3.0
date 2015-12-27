@@ -44,6 +44,8 @@
 
 	<script type="text/javascript">
 
+	{% if owner == session.username %}
+
 		var group_name = "{{ group_name }}";
 
 		$("#add-user").click(function(){
@@ -64,6 +66,8 @@
 				}
 			});
 		});
+
+	{% endif %}
 
 	</script>
 

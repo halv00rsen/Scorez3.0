@@ -29,7 +29,7 @@
 		</table>
 
 		<h3>Brukere</h3>
-		<h4>Brukere logget inn: <span id="usr-logged-in"></span></h4>
+		<!-- <h4>Brukere logget inn: <span id="usr-logged-in"></span></h4> -->
 		<table class="table">
 			<thead>
 				<tr>
@@ -76,6 +76,8 @@
 						show_message("Brukeren " + $("#username").val() + " ble laget.");
 						$("#user-body").append("<tr><td>" + data.username + "</td><td>" + (data.local_admin ?"Ja": "Nei") + "</td><td>" + (data.system_admin ? "Ja": "Nei") + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>");
 					}
+					else if (result["msg"])
+						show_message(result["msg"]);
 					else
 						show_message("Brukeren " + data["username"] + " ble ikke laget.");
 					$("#username").val("");
