@@ -106,6 +106,7 @@ def add_new_beer():
 			return redirect(url_for("home"))
 		error = None
 		beer_name, beer_type = request.form["beer_name"], request.form["beer_type"]
+		group_name, group_owner = request.form["group_name"], request.form["group_owner"]
 		if not len(beer_name) or not len(beer_type) or len(g.db.execute("select 1 name, type from Beer where name = ? and type = ?", [beer_name, beer_type]).fetchall()):
 			error = "Ølet {} finnes allerede i systemet.".format(beer_name) 
 			return render_template("new_beer.html", error=error, beer_types=get_all_types())
@@ -249,6 +250,7 @@ def user_page_admin():
 	# if is_admin():
 	# return redirect(url_for("home"))
 
+# Fiks denne
 @app.route("/delete_user", methods=["POST", "GET"])
 @requires_login
 @requires_system_admin
@@ -341,7 +343,7 @@ def create_new_group():
 		return jsonify(success=False, msg="Gruppen eksisterer allerede.")
 	g.db.execute("insert into Groupi values (?,?)", [js["group"], session["username"]])
 	g.db.commit()
-	session["your_groups"].append(js["group"])
+	session["your_groups"].append({"name": js["group"]})
 	return jsonify(success=True)
 
 
@@ -431,6 +433,25 @@ def delete_group():
 		g.db.commit()
 		return jsonify(success=True)
 	return jsonify(success=False, msg="Gruppen eksisterer ikke.")
+
+def belongs_to_group(username, group_name, owner):
+	if not is_string(username, group_name, owner):
+		return False
+	group_id = g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall()
+	if not group_id:
+		return False
+	group_id = group_id[0]
+	rel = g.db.execute("select 1 from GroupRelation where group_id = ? and user = ?", [group_id, username]).fetchall()
+	if not rel:
+		return False
+	
+
+
+def is_string(*args):
+	for a in args:
+		if type(a) != str:
+			return False
+	return True
 
 def request_get_json():
 	if request:

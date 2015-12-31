@@ -9,9 +9,11 @@ create table User (
 	password varchar(30) not null,
 	local_admin boolean not null,
 	system_admin boolean not null
+	-- ,top_group varchar(30)
 );
 create table Beer_type(
 	name varchar(30),
+	group_id boolean not null,
 	-- group varchar(30),
 	-- primary key (name, group)
 	primary key (name)
@@ -19,6 +21,7 @@ create table Beer_type(
 create table Beer (
 	name varchar(30) not null,
 	type varchar(30) not null,
+	group_id integer not null,
 	-- group varchar(30) not null,
 	-- primary key (name, type, group)
 	primary key (name, type)
@@ -29,17 +32,23 @@ create table Score (
 	type varchar(30) not null,
 	user varchar(30) not null,
 	-- group varchar(30) not null,
+	group_id integer not null,
 	p integer not null
 );
 create table Groupi(
-	-- id integer primary key autoincrement,
+	id integer primary key autoincrement,
 	name varchar(30) not null,
 	owner varchar(30) not null,
 	primary key (name, owner)
 );
 create table GroupRelation(
-	name varchar(30) not null,
-	owner varchar(30) not null,
+	-- name varchar(30) not null,
+	-- owner varchar(30) not null,
+	group_id integer not null,
 	user varchar(30) not null,
-	primary key (name, owner, user)
+	del_element boolean,
+	types_handling boolean,
+	add_points boolean,
+	primary key (user, group_id)
+	-- primary key (name, owner, user)
 );
