@@ -83,11 +83,12 @@ def init():
 		db = connect_db()
 		try:
 			r = db.execute("insert into User values (?,?,?,?)", [username, hash_password(password), True, True])
-			db.execute("insert into Beer_type values (?)", ["Ingen"])
+			# db.execute("insert into Beer_type values (?)", ["Ingen"])
 			db.commit()
 			print("Database was successfully created.")
-		except:
+		except Exception as e:
 			print("Database not created, error.")
+			print(e)
 			pass
 		finally:
 			if db:

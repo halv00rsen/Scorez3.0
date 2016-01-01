@@ -2,7 +2,11 @@
 
 {% block header %} {{group_name}} {% endblock %}
 
-{% block body %} 
+{% block body %}
+
+	<form action="{{ url_for('add_new_beer_group', group_id={{group_id}}) }}">
+		<input type="submit" class="btn btn-default btn-xs" value="Legg til element">
+	</form>
 
 	<table class="table">
 		<thead>

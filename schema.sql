@@ -16,7 +16,7 @@ create table Beer_type(
 	group_id boolean not null,
 	-- group varchar(30),
 	-- primary key (name, group)
-	primary key (name)
+	primary key (name, group_id)
 );
 create table Beer (
 	name varchar(30) not null,
@@ -24,7 +24,7 @@ create table Beer (
 	group_id integer not null,
 	-- group varchar(30) not null,
 	-- primary key (name, type, group)
-	primary key (name, type)
+	primary key (name, type, group_id)
 );
 create table Score (
 	id integer primary key autoincrement,
@@ -38,8 +38,7 @@ create table Score (
 create table Groupi(
 	id integer primary key autoincrement,
 	name varchar(30) not null,
-	owner varchar(30) not null,
-	primary key (name, owner)
+	owner varchar(30) not null
 );
 create table GroupRelation(
 	-- name varchar(30) not null,
