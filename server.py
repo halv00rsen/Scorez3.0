@@ -225,7 +225,7 @@ def types_handler_group(group_id):
 	rel = validate_group_info_id(group_id)
 	if not rel or not (session["username"] == rel[1] or rel[2][session["username"]]["types_handling"]):
 		return redirect(url_for("home"))
-	types = [a for a in g.db.execute("select name from Beer_type where group_id = ?", [group_id]).fetchall()]
+	types = [a[0] for a in g.db.execute("select name from Beer_type where group_id = ?", [group_id]).fetchall()]
 	return render_template("type_handler_group.html", group_id=group_id, types=types)
 
 @app.route("/types_admin")
@@ -238,34 +238,32 @@ def types_page_admin():
 	# if is_admin():
 	# return redirect(url_for("home"))
 
-@app.route("/type_handler", methods=["POST", "GET"])
+@app.route("/type_handler", methods=["POST"])
 @requires_login
 @requires_local_admin
 def type_handler():
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
-	if request.method == "POST":
-		js = request.get_json()
-		typ = js["type"]
-		if len(typ) == 0:
-			return "false"
-		msg = "false"
-		if js["action"] == "add":
-			if len(g.db.execute("select * from Beer_type where name = ?", [typ]).fetchall()):
-				# msg = "Typen {} finnes fra før.".format(typ)
-				msg = "false"
-			else:
-				g.db.execute("insert into Beer_type values (?)",[typ])
-				g.db.commit()
-				# msg = "Typen {} ble lagt til.".format(typ)
-				msg = "true"
-		elif js["action"] == "delete":
-			g.db.execute("delete from Beer_type where name = ?", [typ])
+	js = request.get_json()
+	group_id = js["group_id"]
+	typ = js["type"]
+	if len(typ) == 0 or type(group_id) != int:
+		return jsonify(success=False, msg="Feil i formatering.")
+	if not validate_group_info_id(group_id):
+		return jsonify(success=False, msg="Du har ikke tilgang til denne siden.")
+	elif js["action"] == "add":
+		if len(g.db.execute("select * from Beer_type where name = ? and group_id = ?", [typ, group_id]).fetchall()):
+			return jsonify(success=False, msg="Typen {} finnes fra før.".format(typ))
+		else:
+			g.db.execute("insert into Beer_type values (?,?)",[typ, group_id])
 			g.db.commit()
-			# msg = "Typen {} ble slettet.".format(typ)
-			msg = typ
-		return msg
-	return "Wrong method: requires POST"
+			# msg = "Typen {} ble lagt til.".format(typ)
+			return jsonify(success=True)
+	elif js["action"] == "delete":
+		g.db.execute("delete from Beer_type where name = ? and group_id = ?", [typ, group_id])
+		g.db.commit()
+		return jsonify(success=True)
+	return jsonify(success=False, msg="En feil har skjedd.")
 
 @app.route("/delete_score", methods=["POST"])
 @requires_login
@@ -412,7 +410,7 @@ def show_group_table(group_id):
 	rel = validate_group_info_id(group_id)
 	if type(rel) == list:
 		# get all beers from a given group
-		beers = g.db.execute("select name, type from Beer where group_id = ? order by name asc", [rel[1]]).fetchall()
+		beers = g.db.execute("select name, type from Beer where group_id = ? order by name asc", [rel[3]]).fetchall()
 
 		beers = [dict(name=row[0], type=row[1]) for row in beers]
 		for beer in beers:
@@ -453,19 +451,23 @@ def validate_group_info(group_name, owner):
 @requires_login
 def leave_group():
 	js = request.get_json()
-	if "group" not in js and "owner" not in js:
+	if not js or "group_id" not in js or type(js["group_id"]) != int:
 		return jsonify(success=False, msg="Wrong json.")
-	group, owner = js["group"], js["owner"]
+	group_id = js["group_id"]
+	owner = [a[0] for a in g.db.execute("select owner from Groupi where group_id = ?", [group_id]).fetchall()]
+	if len(owner) != 1:
+		return jsonify(success=False, msg="Ugyldige data")
+	owner = owner[0]
 	if owner == session["username"]:
 		return jsonify(success=False, msg="Kan ikke forlate egen gruppe, den må slettes.")
 	if user_exists(owner):
 		# g.db.execute("delete from Groupi where name = ? and owner = ?", [group, owner])
-		g.db.execute("delete from GroupRelation where name = ? and owner = ? and user = ?", [group, owner, session["username"]])
+		g.db.execute("delete from GroupRelation where group_id = ? and user = ?", [group_id, session["username"]])
 		# delete scores given by this user
 		g.db.commit()
-		obj = {"owner": js["owner"], "name": js["group"]}
-		if obj in session["other_groups"]:
-			session["other_groups"].remove(obj)
+		# obj = {"owner": js["owner"], "name": js["group"]}
+		# if obj in session["other_groups"]:
+		# 	session["other_groups"].remove(obj)
 		return jsonify(success=True)
 	return jsonify(success=False, msg="Eieren eksisterer ikke.")
 

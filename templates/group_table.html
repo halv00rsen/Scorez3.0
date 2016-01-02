@@ -168,4 +168,14 @@
 
 	</script>
 
+	
+  {% if error %}
+    <script type="text/javascript">
+
+        show_message("{{ error }}");
+        console.log("{{ error }}");
+
+    </script>
+  {% endif %}
+
 {% endblock %}

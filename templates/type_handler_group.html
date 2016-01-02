@@ -30,3 +30,55 @@
 	{% endfor %}
 	</table>
 {% endblock %}
+
+{% block scripts %}
+	
+	<script type="text/javascript">
+
+		$(".del-btn").click(function() {
+			type = this.name;
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('type_handler') }}",
+				data: JSON.stringify({
+					"type": this.name,
+					"group_id": {{ group_id }},
+					"action": "delete"
+				}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result.success){
+						$("#" + type).remove();
+						show_message("Typen ble fjernet.");
+					}
+					if (result.msg)
+						show_message(result.msg);
+				}
+			});
+		});
+
+		$("#save_button").click(function() {
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('type_handler') }}",
+				data: JSON.stringify({
+					"type": $("#type_name").val(),
+					"group_id": {{ group_id }},
+					"action": "add"
+				}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(result) {
+					if (result.success){
+						$("#type_table").append("<tr><td>" + $("#type_name").val() + "</td><td><button class='btn btn-danger btn-xs del-btn' name=" + $("#type_name").val() + ">Slett</button></td></tr>");
+						show_message("Typen ble lagt til.");
+					}
+					if (result.msg)
+						show_message(result.msg);
+					$("#type_name").val("");
+				}
+			});
+		});
+
+	</script>
+
+{% endblock %}

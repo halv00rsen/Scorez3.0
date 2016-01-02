@@ -76,7 +76,7 @@
 							</form>
 						</li>
 						<li>
-							<button class="btn btn-warning btn-xs leave-btn">Forlat gruppen</button>
+							<button class="btn btn-warning btn-xs leave-btn" value="{{ group.group_id }}">Forlat gruppen</button>
 						</li>
 					</ul>
 				</td>
@@ -95,14 +95,14 @@
 
 		$(".del-btn").click(function() {
 			var par = $(this).parent().parent().parent();
+			console.log($(this).value);
 			var name = par.siblings()[0].innerText;
 			$.ajax({
 				type: "POST",
 				contentType: 'application/json;charset=UTF-8',
 				url: "{{ url_for('delete_group') }}",
 				data: JSON.stringify({
-					group: name,
-					owner: owner
+					group_id: parseInt($(this).val())
 				}),
 				success: function(res) {
 					if (res["success"]){
@@ -125,23 +125,22 @@
 				contentType: 'application/json;charset=UTF-8',
 				url: "{{ url_for('leave_group') }}",
 				data: JSON.stringify({
-					group: group,
-					owner: owner
+					group_id: parseInt($(this).val())
 				}),
 				success: function(res) {
 					if (res["success"]){
 						show_message("Du har nå forlatt " + owner + "s gruppe " + group + ".");
 						yeah.parent().remove();
 					}
-					if (res["msg"])
+					if (res["msg"]){
 						show_message(res["msg"]);
+					}
 				}
 			});
 		});
 
 		$("#create-group").click(function() {
 			var name = $("#group-name").val();
-			console.log(name);
 			if (!name.length){
 				show_message("Må ha en lengde på gruppen.");
 				return;
