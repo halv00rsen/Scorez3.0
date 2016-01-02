@@ -35,13 +35,12 @@ def login():
 			session["local_admin"] = cur[0][2] == 1
 			session["username"] = username
 			# session["groups"] = 
-			groups = [dict(name=row[0], group_id=row[1]) for row in g.db.execute("select name, id from Groupi where owner = ?", [session["username"]]).fetchall()]
-			other_groups = [dict(name=row[0], owner=row[1], del_element=row[2], types=row[3], points=row[4], group_id=row[5]) for row in g.db.execute("select name, owner, del_element, types_handling, add_points, group_id from GroupRelation inner join Groupi where user = ?", [username]).fetchall()]
+			groups = [dict(name=row[0], group_id=row[1]) for row in g.db.execute("select name, group_id from Groupi where owner = ?", [session["username"]]).fetchall()]
+			other_groups = [dict(name=row[0], owner=row[1], del_element=row[2], types=row[3], points=row[4], group_id=row[5]) for row in g.db.execute("select name, owner, del_element, types_handling, add_points, group_id from GroupRelation natural join Groupi where user = ?", [username]).fetchall()]
 			# print(ting)
-			# group_ids = [a for a in g.db.execute("select * from GroupRelation where user = ?", [username])]
+			# group_ids = [a for a in g.db.execute("select * from GroupRelation where user = ?", [username])]id
 			# print(group_ids)
 			# other_groups = [[dict(name=row[0], owner=row[1]) for row in g.db.execute("select 1 name, owner from Groupi where group_id = ?", [b])] for b in group_ids]
-			# print(other_groups)
 			# other_groups = [dict(name=row[0], owner=row[1]) for row in g.db.execute("select name, owner from GroupRelation where user = ?", [session["username"]]).fetchall()]
 			session["your_groups"] = groups
 			session["other_groups"] = other_groups
@@ -102,34 +101,52 @@ def home():
 		beer["num_of_scorez"] = len(cur)
 	return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
 
-@app.route("/add_beer", methods=["GET", "POST"])
-@requires_login
-def add_new_beer():
-	# if not is_logged_in():
-	# 	return redirect(url_for("login"))
-	if request.method == "POST":
-		if request.form["submitButton"] == "Avbryt":
-			return redirect(url_for("home"))
-		error = None
-		beer_name, beer_type = request.form["beer_name"], request.form["beer_type"]
-		group_name, group_owner = request.form["group_name"], request.form["group_owner"]
-		if not len(beer_name) or not len(beer_type) or len(g.db.execute("select 1 name, type from Beer where name = ? and type = ?", [beer_name, beer_type]).fetchall()):
-			error = "Ølet {} finnes allerede i systemet.".format(beer_name) 
-			return render_template("new_beer.html", error=error, beer_types=get_all_types())
-		if not len(g.db.execute("select 1 name from Beer_type where name = ?", [beer_type]).fetchall()):
-			error = "Typen {} finnes ikke i systemet.".format(beer_type)
-			return render_template("new_beer.html", error=error, beer_types=get_all_types())
-		g.db.execute("insert into Beer values (?,?)", [beer_name, beer_type])
-		g.db.commit()
-		return redirect(url_for("home"))
-	return render_template("new_beer.html", beer_types=get_all_types())
+# @app.route("/add_beer", methods=["GET", "POST"])
+# @requires_login
+# def add_new_beer():
+# 	# if not is_logged_in():
+# 	# 	return redirect(url_for("login"))
+# 	if request.method == "POST":
+# 		if request.form["submitButton"] == "Avbryt":
+# 			return redirect(url_for("home"))
+# 		error = None
+# 		beer_name, beer_type = request.form["beer_name"], request.form["beer_type"]
+# 		group_name, group_owner = request.form["group_name"], request.form["group_owner"]
+# 		if not len(beer_name) or not len(beer_type) or len(g.db.execute("select 1 name, type from Beer where name = ? and type = ?", [beer_name, beer_type]).fetchall()):
+# 			error = "Ølet {} finnes allerede i systemet.".format(beer_name) 
+# 			return render_template("new_beer.html", error=error, beer_types=get_all_types())
+# 		if not len(g.db.execute("select 1 name from Beer_type where name = ?", [beer_type]).fetchall()):
+# 			error = "Typen {} finnes ikke i systemet.".format(beer_type)
+# 			return render_template("new_beer.html", error=error, beer_types=get_all_types())
+# 		g.db.execute("insert into Beer values (?,?)", [beer_name, beer_type])
+# 		g.db.commit()
+# 		return redirect(url_for("home"))
+# 	return render_template("new_beer.html", beer_types=get_all_types())
 
-@app.route("/add_beer/<int:group_id>", methods=["GET", "POST"])
+@app.route("/add_beer=<int:group_id>", methods=["GET", "POST"])
 @requires_login
 def add_new_beer_group(group_id):
+	rels = validate_group_info_id(group_id)
+	if not rels or not (session["username"] == rels[1] or rels[2][session["username"]]["add_points"]):
+		return redirect(url_for("home"))
 	if request.method == "POST":
 		if request.form["submitButton"] == "Avbryt":
-			return redirect(url_for(""))
+			return redirect(url_for("show_group_table", group_id=group_id))
+		beer_name, beer_type = request.form["beer_name"], request.form["beer_type"]
+		if not len(beer_name) or not len(beer_type):
+			return redirect(url_for("home"))
+		hei = g.db.execute("select 1 name from Beer where group_id = ? and type = ? and name = ?", [group_id, beer_type, beer_name]).fetchall()
+		if hei:
+			return redirect(url_for("show_group_table", group_id=group_id, error="Ølet finnes allerede."))
+		typ = g.db.execute("select 1 name from Beer_type where group_id = ? and name = ?", [group_id, beer_type]).fetchall()
+		if not typ:
+			return redirect(url_for("show_group_table", group_id=group_id, error="Typen finnes ikke."))
+		g.db.execute("insert into Beer values (?,?,?)", [beer_name, beer_type, group_id])
+		g.db.commit()
+		return redirect(url_for("show_group_table", group_id=group_id))
+	return render_template("new_beer.html", group_id=group_id, beer_types=get_beer_types_group(group_id))
+
+
 
 @app.route("/delete_beer/<beer_name>,<beer_type>", methods=["GET", "POST"])
 @requires_login
@@ -201,6 +218,15 @@ def change_password():
 	g.db.execute("update User set password = ? where username = ?", [hash_password(newPass), session["username"]])
 	g.db.commit()	
 	return "true"
+
+@app.route("/types_handler_group=<int:group_id>")
+@requires_login
+def types_handler_group(group_id):
+	rel = validate_group_info_id(group_id)
+	if not rel or not (session["username"] == rel[1] or rel[2][session["username"]]["types_handling"]):
+		return redirect(url_for("home"))
+	types = [a for a in g.db.execute("select name from Beer_type where group_id = ?", [group_id]).fetchall()]
+	return render_template("type_handler_group.html", group_id=group_id, types=types)
 
 @app.route("/types_admin")
 @requires_login
@@ -340,7 +366,7 @@ def add_score():
 @app.route("/groups")
 @requires_login
 def get_groups():
-	groups = [dict(name=row[0]) for row in g.db.execute("select name from Groupi where owner = ?", [session["username"]]).fetchall()]
+	groups = [dict(name=row[0], group_id=row[1]) for row in g.db.execute("select name, group_id from Groupi where owner = ?", [session["username"]]).fetchall()]
 	# other_groups = [dict(name=row[0], owner=row[1]) for row in g.db.execute("select name, owner from GroupRelation where user = ?", [session["username"]]).fetchall()]
 	# print(groups)
 	# print(other_groups)
@@ -356,7 +382,7 @@ def create_new_group():
 		return jsonify(success=False, msg="Gruppen eksisterer allerede.")
 	g.db.execute("insert into Groupi (name, owner) values (?,?)", [js["group"], session["username"]])
 	g.db.commit()
-	session["your_groups"].append({"name": js["group"]})
+	session["your_groups"].append({"name": js["group"], "group_id": g.db.execute("select group_id from Groupi where name = ? and owner = ?", [js["group"], session["username"]]).fetchall()[0][0]})
 	return jsonify(success=True)
 
 
@@ -370,42 +396,42 @@ def add_user_to_group():
 		return jsonify(success=False, msg="Kan ikke legge til deg selv.")
 	if not user_exists(js["user"]):
 		return jsonify(success=False, msg="The user {} does not exist.".format(js["user"]))
-	group_id = g.db.execute("select 1 from Groupi where name = ? and owner = ?", [js["group"], session["username"]]).fetchall() 
+	group_id = g.db.execute("select group_id from Groupi where name = ? and owner = ?", [js["group"], session["username"]]).fetchall() 
 	if not group_id:
 		return jsonify(success=False, msg="Gruppen eksisterer ikke.")
 	group_id = group_id[0][0]
-	if g.db.execute("select 1 from GroupRelation inner join Groupi where name = ? and owner = ? and user = ?", [js["group"], session["username"], js["user"]]).fetchall():
+	if g.db.execute("select 1 from GroupRelation natural join Groupi where name = ? and owner = ? and user = ?", [js["group"], session["username"], js["user"]]).fetchall():
 		return jsonify(success=False, msg="Brukeren {} er allerede i denne gruppen.".format(js["user"]))
 	g.db.execute("insert into GroupRelation values (?,?,?,?,?)", [group_id, js["user"], js["can_delete"], js["types"], js["add_points"]])
 	g.db.commit()
 	return jsonify(success=True)
 
-@app.route("/show_group_table/<int:group_id>")
+@app.route("/show_group_table=<int:group_id>")
 @requires_login
 def show_group_table(group_id):
 	rel = validate_group_info_id(group_id)
 	if type(rel) == list:
 		# get all beers from a given group
 		beers = g.db.execute("select name, type from Beer where group_id = ? order by name asc", [rel[1]]).fetchall()
+
 		beers = [dict(name=row[0], type=row[1]) for row in beers]
 		for beer in beers:
 			cur = [a[0] for a in g.db.execute("select p from Score where beer = ? and type = ? and group_id = ?", [beer["name"], beer["type"], rel[1]]).fetchall()]
 			beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
 			beer["num_of_scorez"] = len(cur)
-		return render_template("group_table.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True), group_name=group_name, owner=owner, relations=rel[0], group_id=rel[1])
+		return render_template("group_table.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True), group_name=rel[0], owner=rel[1], relations=rel[2], group_id=rel[3])
 	return redirect(url_for("home"))
 
-@app.route("/show_group/<group_name>,<owner>")
+@app.route("/show_group=<int:group_id>")
 @requires_login
-def show_group(group_name, owner):
-	rel = validate_group_info(group_name, owner)
+def show_group(group_id):
+	rel = validate_group_info_id(group_id)
 	if type(rel) == list:
-		return render_template("group_page.html", group_name=group_name, owner=owner, relations=rel[0])
+		return render_template("group_page.html", group_name=rel[0], owner=rel[1], relations=rel[2])
 	return redirect(url_for("home"))
 
 def validate_group_info_id(group_id):
-	ting = g.db.execute("select name, owner from Groupi where id = ?",[group_id]).fetchall()
-	print(ting)
+	ting = g.db.execute("select name, owner from Groupi where group_id = ?",[group_id]).fetchall()
 	if not ting:
 		return False
 	return validate_group_info(ting[0][0], ting[0][1])
@@ -413,15 +439,15 @@ def validate_group_info_id(group_id):
 def validate_group_info(group_name, owner):
 	if not group_name or not owner:
 		return False
-	group_id = g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall()
+	group_id = g.db.execute("select group_id from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall()
 	if not group_id:
 		return False
 	group_id = group_id[0][0]
 	# relations = [a[0] for a in g.db.execute("select user from GroupRelation where name = ? and owner = ?",[group_name, owner]).fetchall()]
-	relations = [a[0] for a in g.db.execute("select user from GroupRelation inner join Groupi where Groupi.name = ? and Groupi.owner = ?",[group_name, owner]).fetchall()]
+	relations = {a[0]: {"del_element": a[1], "types_handling": a[2], "add_points": a[3]} for a in g.db.execute("select user, del_element, types_handling, add_points from GroupRelation natural join Groupi where Groupi.name = ? and Groupi.owner = ?",[group_name, owner]).fetchall()}
 	if session["username"] not in relations and owner != session["username"]:
 		return False
-	return [relations, group_id]
+	return [group_name, owner, relations, group_id]
 
 @app.route("/leave_group", methods=["POST"])
 @requires_login
@@ -462,7 +488,7 @@ def delete_group():
 def belongs_to_group(username, group_name, owner):
 	if not is_string(username, group_name, owner):
 		return False
-	group_id = g.db.execute("select 1 from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall()
+	group_id = g.db.execute("select group_id from Groupi where name = ? and owner = ?", [group_name, owner]).fetchall()
 	if not group_id:
 		return False
 	group_id = group_id[0]
@@ -502,6 +528,9 @@ def get_beer_info(beer_name, beer_type):
 
 def get_all_types():
 	return [typ[0] for typ in g.db.execute("select * from Beer_type order by name asc").fetchall()]
+
+def get_beer_types_group(group_id):
+	return [row[0] for row in g.db.execute("select name from Beer_type where group_id = ? order by name asc", [group_id]).fetchall()]
 
 def is_admin():
 	return "admin" in session and session["admin"]

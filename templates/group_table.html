@@ -4,9 +4,17 @@
 
 {% block body %}
 
-	<form action="{{ url_for('add_new_beer_group', group_id={{group_id}}) }}">
+	{% if session.username == owner or relations[session.username].add_points %}
+	<form action="{{ url_for('add_new_beer_group', group_id=group_id) }}">
 		<input type="submit" class="btn btn-default btn-xs" value="Legg til element">
 	</form>
+	{% endif %}
+
+	{% if session.username == owner or relations[session.username].del_types %}
+		<form action="{{ url_for('types_handler_group', group_id=group_id) }}">
+			<input type="submit" class="btn btn-default btn-xs" value="Endre typer">			
+		</form>
+	{% endif %}
 
 	<table class="table">
 		<thead>

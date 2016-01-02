@@ -33,7 +33,7 @@
 					<td>
 						<ui class="list-inline">
 							<li>
-								<form action="{{ url_for('show_group', group_name=group.name, owner=session.username) }}">
+								<form action="{{ url_for('show_group', group_id=group.group_id) }}">
 									<input type="submit" class="btn btn-default btn-xs" value="Administrer">
 								</form>
 							</li>
@@ -71,7 +71,7 @@
 				<td>
 					<ul class="list-inline">
 						<li>
-							<form action="{{ url_for('show_group', group_name=group.name, owner=group.owner) }}">
+							<form action="{{ url_for('show_group',group_id=group.group_id) }}">
 								<input type="submit" class="btn btn-default btn-xs" value="Vis">
 							</form>
 						</li>
@@ -158,7 +158,7 @@
 							$("#remove-this").remove();
 						}
 						$("#group-name").val("");
-						$("#group-table").append("<tr><td>" + name + "</td><td><ui class='list-inline'><li><form action='{{ url_for('show_group', group_name=" + name + ", owner=session.username) }}'><input type='submit' class='btn btn-default btn-xs' value='Vis'></form></li><li><button class='btn btn-danger btn-xs del-btn'>Slett</button></li></ui></td></tr>")
+						// $("#group-table").append("<tr><td>" + name + "</td><td><ui class='list-inline'><li><form action=' url_for('show_group', group_name=" + name + ", owner=session.username) '><input type='submit' class='btn btn-default btn-xs' value='Vis'></form></li><li><button class='btn btn-danger btn-xs del-btn'>Slett</button></li></ui></td></tr>")
 					}
 					else if (res["msg"]){
 						show_message(res["msg"]);

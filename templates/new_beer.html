@@ -3,7 +3,7 @@
 {% block header %}Nytt øl{% endblock %}
 
 {% block body %}
-	<form action="{{ url_for('add_new_beer') }}" method="POST">
+	<form action="{{ url_for('add_new_beer_group', group_id=group_id) }}" method="POST">
 		{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
 		<table class="table">
 			<tr>

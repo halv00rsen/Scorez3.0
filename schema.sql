@@ -36,7 +36,7 @@ create table Score (
 	p integer not null
 );
 create table Groupi(
-	id integer primary key autoincrement,
+	group_id integer primary key autoincrement,
 	name varchar(30) not null,
 	owner varchar(30) not null
 );

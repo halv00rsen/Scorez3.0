@@ -16,15 +16,15 @@
 		</tr>
 		<tr>
 			<td>Kan slette elementer:</td>
-			<td><input type="checkbox"></td>
+			<td><input type="checkbox" id="del_element"></td>
 		</tr>
 		<tr>
 			<td>Kan legge til typer:</td>
-			<td><input type="checkbox"></td>
+			<td><input type="checkbox" id="del_type"></td>
 		</tr>
 		<tr>
 			<td>Kan gi poeng:</td>
-			<td><input type="checkbox"></td>
+			<td><input type="checkbox" id="points"></td>
 		</tr>
 		<tr>
 			<td></td>
@@ -66,7 +66,7 @@
 				type: "POST",
 				contentType: 'application/json;charset=UTF-8',
 				url: "{{ url_for('add_user_to_group') }}",
-				data: JSON.stringify({user: username, group: group_name, can_delete: false, types: false, add_points: true}),
+				data: JSON.stringify({user: username, group: group_name, can_delete: $("#del_element").is(":checked"), types: $("#del_type").is(":checked"), add_points: $("#points").is(":checked")}),
 				success: function(res) {
 					if (res["success"]){
 						show_message("Brukeren " + username + " ble lagt til gruppen.");
