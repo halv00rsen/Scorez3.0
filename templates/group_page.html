@@ -7,6 +7,10 @@
 	<h4>Eier: {{ owner }}</h4>
 
 	<br>
+	<form action="{{ url_for('show_group_table', group_id=group_id) }}">
+		<input type="submit" class="btn btn-default btn-xs" value="Gruppetabellen">
+	</form>
+	<br>
 	{% if owner == session.username %}
 	<h4>Legg til brukere i gruppen</h4>
 	<table class="table">
@@ -34,13 +38,28 @@
 	{% endif %}
 	<h4>Medlemmer</h4>
 	<table class="table">
+		<thead>
+			<tr>
+				<th>Brukernavn</th>
+				<th>Poeng</th>
+				<th>Slette</th>
+				<th>Typer</th>
+				<th></th>
+			</tr>	
+		</thead>
 		<tr>
 			<td>{{ owner }}</td>
+			<td>Ja</td>
+			<td>Ja</td>
+			<td>Ja</td>
 			<td></td>
 		</tr>
 	{% for user in relations %}
 		<tr>
-			<td>{{ user }}</td>
+			<td>{{ user.user }}</td>
+			<td>{{"Ja" if user.add_points else "Nei"}}</td>
+			<td>{{"Ja" if user.del_element else "Nei"}}</td>
+			<td>{{"Ja" if user.types_handling else "Nei"}}</td>
 			<td>
 			{% if owner == session.username %}
 				<button class="btn btn-danger del-btn btn-xs" value="{{ user }}">Fjern bruker</button>

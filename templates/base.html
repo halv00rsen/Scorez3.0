@@ -76,15 +76,13 @@
                             {% endif %}
                         </ul>
                     </li>
-            		{% if session.local_admin %}
+            		{% if session.system_admin %}
             			<li class="dropdown">
             				<a href="#" data-toggle="dropdown" class="dropdown-toggle">Admin
             				<b class="caret"></b>
             				</a>
             				<ul class="dropdown-menu">
-                                {% if session.system_admin %}
             					<li><a href="{{ url_for('user_page_admin') }}">Brukere</a></li>
-                                {% endif %}
             					<li><a href="{{ url_for('types_page_admin') }}">Typer</a></li>
             				</ul>
             			</li>

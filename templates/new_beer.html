@@ -3,6 +3,10 @@
 {% block header %}Nytt øl{% endblock %}
 
 {% block body %}
+	<form action="{{ url_for('show_group_table', group_id=group_id) }}">
+		<input type="submit" class="btn btn-default btn-xs" value="Tilbake">
+	</form>
+	<br>
 	<form action="{{ url_for('add_new_beer_group', group_id=group_id) }}" method="POST">
 		{% if error %} <p><strong>Error:</strong> {{ error }}</p> {% endif %}
 		<table class="table">

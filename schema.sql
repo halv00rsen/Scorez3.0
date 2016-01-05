@@ -4,10 +4,11 @@ drop table if exists User;
 drop table if exists Score;
 drop table if exists Groupi;
 drop table if exists GroupRelation;
+drop table if exists FavoriteGroup;
 create table User (
 	username varchar(30) primary key,
 	password varchar(30) not null,
-	local_admin boolean not null,
+	-- local_admin boolean not null,
 	system_admin boolean not null
 	-- ,top_group varchar(30)
 );
@@ -50,4 +51,8 @@ create table GroupRelation(
 	add_points boolean,
 	primary key (user, group_id)
 	-- primary key (name, owner, user)
+);
+create table FavoriteGroup(
+	username varchar(30) primary key,
+	group_id not null
 );

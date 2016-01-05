@@ -82,7 +82,7 @@ def init():
 		init_db()
 		db = connect_db()
 		try:
-			r = db.execute("insert into User values (?,?,?,?)", [username, hash_password(password), True, True])
+			r = db.execute("insert into User values (?,?,?)", [username, hash_password(password), True])
 			# db.execute("insert into Beer_type values (?)", ["Ingen"])
 			db.commit()
 			print("Database was successfully created.")

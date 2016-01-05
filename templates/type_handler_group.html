@@ -4,6 +4,10 @@
 
 {% block body %}
 
+	<form action="{{ url_for('show_group_table', group_id=group_id) }}">
+		<input type="submit" class="btn btn-default btn-xs" value="Tilbake">
+	</form>
+	<br>
 	<table class="table">
 		<tr>
 			<td>Navn på typen</td>
