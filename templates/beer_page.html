@@ -4,14 +4,20 @@
 
 {% block body %}
 
+	<form action="{{ url_for('show_group_table', group_id=group_id) }}">
+		<input type="submit" class="btn btn-default btn-xs" value="Tilbake">
+	</form>
+	<br>
 	<h4>Navn: {{ beer["beer_name"] }}</h4>
 	<h4>Type: {{ beer["beer_type"] }}</h4>
 	<h4 id="average-score"></h4>
+	{% if owner == session.username or relations.add_points %}
 	<ul id="points-field" class="list-inline" style="margin-top:10px;">
 		<li>Legg til poeng:</li>
 		<li><input id="points" type="number" style="max-width: 60px;"></li>
 		<li><button class="btn btn-default btn-xs" id="add-points-btn">Legg til</button></li>
 	</ul>
+	{% endif %}
 	<table class="table">
 		<thead>
 			<tr>
@@ -26,7 +32,7 @@
 				<td>{{ usr }}</td>
 				<td>{{ score }}</td>
 				<td>
-					{% if session.username == usr or session.local_admin %}
+					{% if session.username == usr or session.username == owner %}
 					<button class="btn btn-danger btn-xs del-btn">Slett</button>
 					{% endif %}
 				</td>
@@ -59,7 +65,7 @@
 			}
 			$.ajax({
 				type: "POST",
-				url: "{{ url_for('delete_score') }}",
+				url: "{{ url_for('delete_score', group_id=group_id) }}",
 				data: JSON.stringify(data),
 				contentType: 'application/json;charset=UTF-8',
 				success: function(res) {
@@ -81,7 +87,7 @@
 			var beer = {
 				beer_name: name,
 				beer_type: type,
-				points: $("#points").val()
+				points: parseInt($("#points").val())
 			}
 			if (beer["points"] > 100 || beer["points"] < 0 || beer["points"] % 1 !== 0){
 				show_message("Ugyldige poengverdier. Må være mellom 0-100 og være et heltall.");
@@ -90,15 +96,17 @@
 			}
 			$.ajax({
 				type: "POST",
-				url: "{{ url_for('add_score') }}",
+				url: "{{ url_for('add_score', group_id=group_id) }}",
 				data: JSON.stringify(beer),
 				contentType: 'application/json;charset=UTF-8',
 				success: function(result) {
-					if (result["added"]){
+					if (result["success"]){
 						show_message(beer["points"] + " poeng ble lagret.");
 						$("tbody").append("<tr><td>" + username + "</td><td>" + beer["points"] + "</td><td><button class='btn btn-danger btn-xs del-btn'>Slett</button></td></tr>")
 					}else
 						show_message("Poengene ble ikke lagret.");
+					if (result.msg)
+						show_message(result.msg);
 					$("#points").val("");
 
 				}

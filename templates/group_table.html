@@ -53,7 +53,7 @@
 				<td>
 					<ul class="list-inline ">
 						<li>
-							<form action="{{ url_for('show_beer_page', beer_name=beer.name, beer_type=beer.type) }}" method="GET">
+							<form action="{{ url_for('show_beer_page', beer_name=beer.name, beer_type=beer.type, group_id=group_id) }}" method="GET">
 								<input class="btn btn-info btn-xs" type="submit" value="Vis">
 							</form>
 						</li>

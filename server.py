@@ -96,7 +96,28 @@ def home():
 	# 	beer["score"] = float(sum(cur) / len(cur) if len(cur) else 0)
 	# 	beer["num_of_scorez"] = len(cur)
 	# return render_template("home.html", beers=sorted(beers, key=lambda x : x["score"], reverse=True))
-	return render_template("home3.html")
+	your = [dict(name=a[0], group_id=a[1], owner=session["username"]) for a in g.db.execute("select name, group_id from Groupi where owner = ?", [session["username"]]).fetchall()]
+	other = [dict(name=a[0], group_id=a[1], owner=[2]) for a in g.db.execute("select name, group_id, owner from Groupi natural join GroupRelation where user = ?", [session["username"]]).fetchall()]
+	return render_template("home3.html", groups=your + other)
+
+@app.route("/set_favorite", methods=["POST"])
+@requires_login
+def set_favorite():
+	js = request_get_json()
+	if js and "group_id" in js and type(js["group_id"]) == int:
+		group_id = js["group_id"]
+		if group_id == -1:
+			g.db.execute("delete from FavoriteGroup where username = ?", [session["username"]])
+			g.db.commit()
+			return jsonify(success=True, msg="Favorittgruppen ble fjernet")	
+		rel = validate_group_info_id(group_id)
+		if not rel:
+			return jsonify(success=False, msg="Du har ikke tilgang til denne gruppen, eller den finnes ikke.")
+		g.db.execute("delete from FavoriteGroup where username = ?", [session["username"]])
+		g.db.execute("insert into FavoriteGroup values (?,?)", [session["username"], group_id])
+		g.db.commit()
+		return jsonify(success=True)
+	return jsonify(success=False, msg="Programmeringsfeil")
 
 # @app.route("/add_beer", methods=["GET", "POST"])
 # @requires_login
@@ -185,20 +206,23 @@ def logout():
 	session.pop("your_groups", None)
 	return redirect(url_for("login"))
 
-
-@app.route("/beer/<beer_name>,<beer_type>")
+@app.route("/beer/<int:group_id> beer=<beer_name> type=<beer_type>")
 @requires_login
-def show_beer_page(beer_name, beer_type):
+def show_beer_page(group_id, beer_name, beer_type):
+	rel = validate_group_info_id(group_id)
+	if not rel:
+		return redirect(url_for("home"))
+
 	# if not is_logged_in():
 	# 	return redirect(url_for("login"))
-	return render_template("beer_page.html", beer=get_beer_info(beer_name, beer_type))
+	return render_template("beer_page.html", beer=get_beer_info(beer_name, beer_type, group_id), owner=rel[1], group_id=rel[3], relations=rel[4])
 
-@app.route("/show_beer")
-def show_beer_page_json():
-	js = request.get_json()
-	if "beer_name" in js and "beer_type" in js:
-		return render_template("beer_page.html", beer=get_beer_info(js["beer_name"], js["beer_type"]))
-	return redirect(url_for("home"))
+# @app.route("/show_beer")
+# def show_beer_page_json():
+# 	js = request.get_json()
+# 	if "beer_name" in js and "beer_type" in js:
+# 		return render_template("beer_page.html", beer=get_beer_info(js["beer_name"], js["beer_type"]))
+# 	return redirect(url_for("home"))
 
 @app.route("/user")
 @requires_login
@@ -265,12 +289,13 @@ def type_handler():
 		return jsonify(success=True)
 	return jsonify(success=False, msg="En feil har skjedd.")
 
-@app.route("/delete_score", methods=["POST"])
+@app.route("/delete_score=<int:group_id>", methods=["POST"])
 @requires_login
-def delete_score():
+def delete_score(group_id):
 	js = request.get_json()
 	if "beer" in js and "type" in js and "user" in js and "point" in js:
-		if js["user"] == session["username"] or session["admin"]: 
+		rel = validate_group_info_id(group_id)
+		if rel and (js["user"] == session["username"] or rel[1] == session["username"]): 
 			g.db.execute("delete from Score where beer = ? and type = ? and user = ? and p = ?", [js["beer"], js["type"], js["user"], js["point"]])
 			g.db.commit()
 			return jsonify(deleted=True)
@@ -530,8 +555,8 @@ def get_all_group_information(group, owner):
 
 	pass
 
-def get_beer_info(beer_name, beer_type):
-	scorez = g.db.execute("select user, p from Score where beer = ? and type = ?", [beer_name, beer_type]).fetchall()
+def get_beer_info(beer_name, beer_type, group_id):
+	scorez = g.db.execute("select user, p from Score where beer = ? and type = ? and group_id = ?", [beer_name, beer_type, group_id]).fetchall()
 	return {"beer_name": beer_name, "beer_type": beer_type, "scores": scorez}
 
 def get_all_types():

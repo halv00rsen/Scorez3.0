@@ -16,6 +16,32 @@
 		</tr>
 	</table>
 
+	<h4>Favorittgruppe</h4>
+	<table class="table">
+		<tr>
+			<td>Navn:</td>
+			<td>
+				<div class="form-group">
+					<select class="form-control" id="gr">
+						<option value="-1">Ingen</option>
+						{% for group in groups %}
+							<option value="{{group.group_id}}">
+								{{group.name}}
+								{{group.owner}}
+							</option>
+						{% endfor %}
+					</select>
+				</div>
+			</td>
+		</tr>
+		<tr>
+			<td></td>
+			<td>
+				<button class="btn btn-default" id="save">Lagre</button>				
+			</td>
+		</tr>
+	</table>
+
 	<h4>Dine grupper</h4>
 
 	<table class="table">
@@ -164,6 +190,24 @@
 					}
 					else
 						show_message("Gruppen ble ikke laget.");
+				}
+			});
+		});
+
+		$("#save").click(function(){
+			var favorite = parseInt($("#gr").val());
+			$.ajax({
+				type: "POST",
+				url: "{{ url_for('set_favorite') }}",
+				data: JSON.stringify({group_id: favorite}),
+				contentType: 'application/json;charset=UTF-8',
+				success: function(res) {
+					if (res.success){
+						show_message("Gruppen ble lagret.");
+					}
+					if (res.msg){
+						show_message(res.msg);
+					}
 				}
 			});
 		});
